@@ -4,7 +4,12 @@ import { getDesignSubmission } from "@/app/(modules)/designer-portal/api/queries
 import { SubmissionDetail } from "@/app/(modules)/designer-portal/components/submission-detail";
 import { authProvider } from "@/lib/auth";
 
-async function SubmissionDetailSection({ id }: { id: string }) {
+async function SubmissionDetailSection({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
   const [submission, session] = await Promise.all([
     getDesignSubmission(id),
     authProvider.requireRole([]),
@@ -16,19 +21,18 @@ async function SubmissionDetailSection({ id }: { id: string }) {
   );
 }
 
-export default async function DesignSubmissionPage({
+export default function DesignSubmissionPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
   return (
     <Suspense
       fallback={
         <p className="text-sm text-muted-foreground">Loading submission…</p>
       }
     >
-      <SubmissionDetailSection id={id} />
+      <SubmissionDetailSection params={params} />
     </Suspense>
   );
 }

@@ -50,6 +50,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.38.3",
+    "esbuild": "^0.28.1",
     "html5-qrcode": "^2.3.8",
     "imapflow": "^1.0.184",
     "ioredis": "^5.4.2",
