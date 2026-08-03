@@ -136,12 +136,68 @@ Env vars that swap would need (all currently unused/undefined):
 - **Husky + lint-staged + commitlint** enforce Conventional Commits and
   run ESLint/Prettier on staged files before each commit.
 
+## Modules 13-18 additions (`feat/modules-13-18`)
+
+- **`packages/realtime`** defines a `RealtimeProvider` interface
+  (`subscribe`) mirroring the auth/storage pattern above. The only
+  implementation today is `PollingRealtimeProvider`; the React-facing
+  `useRealtimeQuery` hook wraps TanStack Query's `refetchInterval` as the
+  "polling" transport. A future Supabase Realtime-backed provider
+  (Postgres logical replication over WebSockets) is meant to be a
+  drop-in swap for consumers (module 13's dashboard, module 16's kiosk
+  board) — they only ever call `useRealtimeQuery`, never
+  `setInterval`/`refetchInterval` directly.
+- **Serwist via `@serwist/turbopack`, not `@serwist/next`** for module
+  15's PWA. `@serwist/next`'s `withSerwist` registers a webpack plugin
+  and is incompatible with the Turbopack-only build this repo requires.
+  `@serwist/turbopack` builds the service worker on-demand via esbuild
+  inside a Route Handler (`apps/web/app/serwist/[path]/route.ts`)
+  instead.
+- **Zustand + IndexedDB (`idb-keyval`)** for module 15's offline action
+  queue — `idb-keyval` rather than `localStorage` because base64 camera
+  captures can exceed localStorage's ~5MB quota.
+- **`react-camera-pro`** for module 15's photo capture. Declares a React
+  18 peer dependency; works in practice against React 19 (small
+  hooks-based component, no version-specific API usage), flagged as an
+  unmet-peer warning during install.
+- **`react-window`** (module 16's kiosk board) alongside the
+  already-present `@tanstack/react-virtual` (used elsewhere) — the spec
+  for module 16 called for react-window specifically.
+- **XState v5** (`xstate` + `@xstate/react`) for module 18's design
+  approval workflow, modeled as an explicit state machine
+  (`setup().createMachine()`). The machine's derived transition table is
+  the single source of truth both client-side (which action buttons to
+  show) and server-side (`transitionDesignSubmissionAction` re-validates
+  every requested transition against it before persisting — a submission
+  can never have its status set to an arbitrary string).
+- **TipTap** (`@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/html`) for
+  module 18's designer comments, stored as ProseMirror JSON (not
+  HTML/markdown) and rendered back via `@tiptap/html`'s `generateHTML`.
+- **`react-pdf`** for module 18's PDF viewer (file uploads reuse the
+  existing `StorageProvider`, not a new integration). Its `pdfjs-dist`
+  dependency optionally resolves the native `canvas` package, aliased
+  away for Turbopack via `next.config.ts`'s `turbopack.resolveAlias`
+  (react-pdf's own documented setup for Turbopack; no webpack config).
+- **Framer Motion + SwiperJS** for module 17's adaptive project view —
+  one section-definition list rendered two ways (Framer Motion accordion
+  on desktop, SwiperJS card slider on mobile) chosen by CSS breakpoint,
+  not JS device detection, to avoid an SSR/client render mismatch.
+- **`xlsx` + `@react-pdf/renderer`** for module 14's report exports (CSV/
+  XLSX and PDF respectively) — distinct from `react-pdf` above, which
+  only _displays_ PDFs; `@react-pdf/renderer` _generates_ them.
+- New Drizzle tables: `departments` / `production_stages` (13, 16),
+  `design_submissions` / `design_comments` (18), `employee_actions` (15).
+  See `packages/database/src/schema/`.
+
 ## Deferred / explicitly out of scope for this PR
 
 - Live Supabase project (Auth/Storage/Realtime) — coded against the
   interfaces above, no live credentials exist yet.
 - Stripe, OpenAI (AI photo search), Yahoo IMAP (email integration) —
-  modules 7-18 that depend on these are separate future PRs; see
+  modules that depend on these are separate scope (modules 7-12); see
   `docs/PROGRESS.md`.
 - AG Grid Enterprise (pivot/tree-data/range-selection) — explicitly
   decided against; Community + TanStack Table cover this PR's needs.
+- Module 14's "revenue" and "labor-cost" reports use mocked/estimated
+  data pending a Finance/Payroll module — clearly labeled `isMocked: true`
+  in the API response and surfaced in the UI.

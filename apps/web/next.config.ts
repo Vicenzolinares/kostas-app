@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { withSerwist } from "@serwist/turbopack";
 
 // next.config.ts is loaded as ESM here, so `__dirname` isn't available —
 // derive it from import.meta.url instead.
@@ -17,7 +18,21 @@ const nextConfig: NextConfig = {
     // the workspace lockfile correctly instead of inferring apps/web (or
     // worse, apps/) as the root.
     root: path.join(currentDir, "..", ".."),
+    // react-pdf's dependency pdfjs-dist optionally resolves `canvas` (a
+    // native Node module, irrelevant in the browser). Webpack builds alias
+    // it away via `config.resolve.alias`; Turbopack's equivalent is this
+    // resolveAlias — see react-pdf's README "Next.js" section.
+    resolveAlias: {
+      canvas: "./empty-module.ts",
+    },
   },
 };
 
-export default nextConfig;
+// `@serwist/next`'s `withSerwist` is webpack-only (it registers a webpack
+// plugin) and is incompatible with Turbopack, which this app requires. For
+// module 15 (Employee Portal PWA) we use `@serwist/turbopack` instead: the
+// service worker is built by a Route Handler
+// (app/serwist/[path]/route.ts) via esbuild rather than a bundler plugin,
+// so `withSerwist` here only needs to mark `esbuild`/`esbuild-wasm` as
+// server-external packages.
+export default withSerwist(nextConfig);

@@ -11,3 +11,7 @@ export * from "./calendar-event";
 export * from "./finance";
 export * from "./email";
 export * from "./ai-photo-search";
+export * from "./department-status";
+export * from "./design-submission";
+export * from "./employee-action";
+export * from "./report";
