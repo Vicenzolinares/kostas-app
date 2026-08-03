@@ -8,7 +8,8 @@ import { PayInvoiceButton } from "@/app/(modules)/finance/components/pay-invoice
 import { TransactionsTable } from "@/app/(modules)/finance/components/transactions-table";
 import { paymentProvider } from "@/lib/payments";
 
-async function InvoiceDetail({ id }: { id: string }) {
+async function InvoiceDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const invoice = await getInvoiceById(id);
   if (!invoice) notFound();
 
@@ -87,11 +88,18 @@ async function InvoiceDetail({ id }: { id: string }) {
   );
 }
 
-export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+// See work-orders/[id]/page.tsx for why this placeholder param exists —
+// Cache Components requires at least one static param for a dynamic
+// segment; dynamicParams defaults to true so every other :id still
+// renders on-demand.
+export async function generateStaticParams() {
+  return [{ id: "00000000-0000-0000-0000-000000000000" }];
+}
+
+export default function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <Suspense fallback={<p className="text-sm text-muted-foreground">Loading invoice…</p>}>
-      <InvoiceDetail id={id} />
+      <InvoiceDetail params={params} />
     </Suspense>
   );
 }

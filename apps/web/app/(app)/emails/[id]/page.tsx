@@ -4,7 +4,8 @@ import { Badge, Card, CardContent, CardHeader, CardTitle } from "@kostas/ui";
 import { getEmailById } from "@/app/(modules)/emails/api/queries";
 import { MarkReadOnView } from "@/app/(modules)/emails/components/email-detail-actions";
 
-async function EmailDetail({ id }: { id: string }) {
+async function EmailDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const email = await getEmailById(id);
   if (!email) notFound();
 
@@ -53,11 +54,18 @@ async function EmailDetail({ id }: { id: string }) {
   );
 }
 
-export default async function EmailDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+// See work-orders/[id]/page.tsx for why this placeholder param exists —
+// Cache Components requires at least one static param for a dynamic
+// segment; dynamicParams defaults to true so every other :id still
+// renders on-demand.
+export async function generateStaticParams() {
+  return [{ id: "00000000-0000-0000-0000-000000000000" }];
+}
+
+export default function EmailDetailPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <Suspense fallback={<p className="text-sm text-muted-foreground">Loading email…</p>}>
-      <EmailDetail id={id} />
+      <EmailDetail params={params} />
     </Suspense>
   );
 }

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { ScanWorkflow } from "@/app/(modules)/hardware-inventory/components/scan-workflow";
 
 export default function HardwareScanPage() {
@@ -9,7 +10,9 @@ export default function HardwareScanPage() {
           Use your device camera to scan a barcode or QR code and adjust stock.
         </p>
       </div>
-      <ScanWorkflow />
+      <Suspense fallback={<p className="text-sm text-muted-foreground">Loading scanner…</p>}>
+        <ScanWorkflow />
+      </Suspense>
     </div>
   );
 }

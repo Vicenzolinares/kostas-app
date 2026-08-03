@@ -6,7 +6,8 @@ import { WORK_ORDER_TYPE_LABEL } from "@/app/(modules)/work-orders/components/st
 import { StatusControl } from "@/app/(modules)/work-orders/components/status-control";
 import { PdfActions } from "@/app/(modules)/work-orders/components/pdf-actions";
 
-async function WorkOrderDetail({ id }: { id: string }) {
+async function WorkOrderDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const workOrder = await getWorkOrderById(id);
   if (!workOrder) notFound();
 
@@ -104,11 +105,20 @@ async function WorkOrderDetail({ id }: { id: string }) {
   );
 }
 
-export default async function WorkOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+// Cache Components requires generateStaticParams to return at least one
+// param for a dynamic segment to be eligible for a static shell. Real
+// work order IDs don't exist at build time, so this is a placeholder
+// that won't match any row; dynamicParams defaults to true, so every
+// other :id still renders on-demand at request time (see WorkOrderDetail
+// above, which 404s via notFound() for unknown IDs either way).
+export async function generateStaticParams() {
+  return [{ id: "00000000-0000-0000-0000-000000000000" }];
+}
+
+export default function WorkOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <Suspense fallback={<p className="text-sm text-muted-foreground">Loading work order…</p>}>
-      <WorkOrderDetail id={id} />
+      <WorkOrderDetail params={params} />
     </Suspense>
   );
 }

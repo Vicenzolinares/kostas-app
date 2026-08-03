@@ -5,7 +5,8 @@ import { getHardwareById, listScanEvents } from "@/app/(modules)/hardware-invent
 import { StockBadge } from "@/app/(modules)/hardware-inventory/components/stock-badge";
 import { HardwareFormDialog } from "@/app/(modules)/hardware-inventory/components/hardware-form-dialog";
 
-async function HardwareDetail({ id }: { id: string }) {
+async function HardwareDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const item = await getHardwareById(id);
   if (!item) notFound();
   const events = await listScanEvents(item.id);
@@ -58,11 +59,18 @@ async function HardwareDetail({ id }: { id: string }) {
   );
 }
 
-export default async function HardwareDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+// See work-orders/[id]/page.tsx for why this placeholder param exists —
+// Cache Components requires at least one static param for a dynamic
+// segment; dynamicParams defaults to true so every other :id still
+// renders on-demand.
+export async function generateStaticParams() {
+  return [{ id: "00000000-0000-0000-0000-000000000000" }];
+}
+
+export default function HardwareDetailPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <Suspense fallback={<p className="text-sm text-muted-foreground">Loading item…</p>}>
-      <HardwareDetail id={id} />
+      <HardwareDetail params={params} />
     </Suspense>
   );
 }
