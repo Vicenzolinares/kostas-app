@@ -9,17 +9,22 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@kostas/database": "workspace:*",
     "@kostas/shared": "workspace:*",
     "bcryptjs": "^2.4.3",
+    "drizzle-orm": "^0.38.3",
     "jose": "^5.9.6"
   },
   "devDependencies": {
     "@kostas/config": "workspace:*",
     "@types/bcryptjs": "^2.4.6",
-    "typescript": "^5"
+    "@types/node": "^20",
+    "eslint": "^9",
+    "typescript": "^5",
+    "vitest": "^2.1.8"
   }
 }
