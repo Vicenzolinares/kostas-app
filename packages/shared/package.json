@@ -8,7 +8,8 @@
     "./schemas": "./src/schemas/index.ts",
     "./storage": "./src/storage/index.ts",
     "./ai-vision": "./src/ai-vision/index.ts",
-    "./payments": "./src/payments/index.ts"
+    "./payments": "./src/payments/index.ts",
+    "./email": "./src/email/index.ts"
   },
   "scripts": {
     "lint": "eslint .",
@@ -18,13 +19,17 @@
   "dependencies": {
     "zod": "^3.24.1",
     "openai": "^4.77.0",
-    "stripe": "^17.5.0"
+    "stripe": "^17.5.0",
+    "imapflow": "^1.0.184",
+    "postal-mime": "^2.4.3",
+    "nodemailer": "^6.9.16"
   },
   "devDependencies": {
     "@kostas/config": "workspace:*",
     "@types/node": "^20",
     "eslint": "^9",
     "typescript": "^5",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "@types/nodemailer": "^6.4.17"
   }
 }
