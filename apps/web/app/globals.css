@@ -1,0 +1,5 @@
+@import "@kostas/ui/globals.css";
+
+/* Tailwind v4 auto-detects content in this app, but packages/ui lives
+   outside apps/web's directory tree, so it needs an explicit @source. */
+@source "../../../packages/ui/src";
