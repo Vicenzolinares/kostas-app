@@ -93,6 +93,11 @@ export function FabricFormDialog() {
                 step="0.01"
                 {...register("widthInches")}
               />
+              {errors.widthInches ? (
+                <p className="text-xs text-destructive">
+                  {errors.widthInches.message}
+                </p>
+              ) : null}
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="costPerYard">Cost per yard ($)</Label>
@@ -102,6 +107,11 @@ export function FabricFormDialog() {
                 step="0.01"
                 {...register("costPerYard")}
               />
+              {errors.costPerYard ? (
+                <p className="text-xs text-destructive">
+                  {errors.costPerYard.message}
+                </p>
+              ) : null}
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="yardsInStock">Yards in stock</Label>
@@ -111,6 +121,11 @@ export function FabricFormDialog() {
                 step="0.01"
                 {...register("yardsInStock")}
               />
+              {errors.yardsInStock ? (
+                <p className="text-xs text-destructive">
+                  {errors.yardsInStock.message}
+                </p>
+              ) : null}
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="warehouseLocation">Warehouse location</Label>

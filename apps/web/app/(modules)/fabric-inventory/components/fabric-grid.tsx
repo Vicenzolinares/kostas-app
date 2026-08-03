@@ -7,6 +7,7 @@ import {
   ClientSideRowModelModule,
   TextFilterModule,
   NumberFilterModule,
+  NumberEditorModule,
   ValidationModule,
   type ColDef,
   type CellValueChangedEvent,
@@ -18,10 +19,15 @@ import type { FabricInventory } from "../types";
 
 // AG Grid Community only — Enterprise (pivot/tree-data/range-selection)
 // is intentionally out of scope; see docs/TECH_STACK.md.
+// NumberEditorModule is required because the `yardsInStock` column below
+// is `editable: true` with a numeric value — AG Grid v33's default
+// number cell editor lives in its own module and must be registered
+// explicitly, or editing throws "AG Grid: error #200".
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
   TextFilterModule,
   NumberFilterModule,
+  NumberEditorModule,
   ValidationModule,
 ]);
 
