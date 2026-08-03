@@ -25,13 +25,13 @@ async function DashboardSection() {
       id: "kpis",
       title: "Key metrics",
       defaultLayout: { x: 0, y: 0, w: 12, h: 2 },
-      render: () => <KpiCards {...kpis} />,
+      content: <KpiCards {...kpis} />,
     },
     {
       id: "projects-by-status",
       title: "Projects by status",
       defaultLayout: { x: 0, y: 2, w: 6, h: 4 },
-      render: () => <ProjectsByStatusChart data={statusBreakdown} />,
+      content: <ProjectsByStatusChart data={statusBreakdown} />,
     },
   ];
 

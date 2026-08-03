@@ -11,7 +11,9 @@ import type { DashboardWidgetLayout } from "@kostas/database/schema";
 export interface DashboardWidgetDef {
   id: string;
   title: string;
-  render: () => React.ReactNode;
+  // A pre-rendered element, not a render function: Server Components can
+  // pass JSX across the server/client boundary, but not plain functions.
+  content: React.ReactNode;
   defaultLayout: { x: number; y: number; w: number; h: number };
 }
 
@@ -159,7 +161,7 @@ export function DashboardGrid({
                           {widget.title}
                         </CardTitle>
                       </CardHeader>
-                      <CardContent>{widget.render()}</CardContent>
+                      <CardContent>{widget.content}</CardContent>
                     </Card>,
                     portalContainers[id],
                   )
