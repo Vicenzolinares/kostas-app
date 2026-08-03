@@ -6,9 +6,9 @@ import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tan
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Button, Input } from "@kostas/ui";
 import { WorkOrderStatusBadge, WORK_ORDER_TYPE_LABEL } from "./status-badge";
 import { useWorkOrderFilters } from "../hooks/use-work-order-filters";
-import type { WorkOrderWithRelations } from "../types";
+import type { WorkOrderListItem } from "../types";
 
-export function WorkOrdersTable({ workOrders }: { workOrders: WorkOrderWithRelations[] }) {
+export function WorkOrdersTable({ workOrders }: { workOrders: WorkOrderListItem[] }) {
   const { search, setSearch } = useWorkOrderFilters();
 
   const filtered = useMemo(() => {
@@ -22,7 +22,7 @@ export function WorkOrdersTable({ workOrders }: { workOrders: WorkOrderWithRelat
     );
   }, [workOrders, search]);
 
-  const columns = useMemo<ColumnDef<WorkOrderWithRelations>[]>(
+  const columns = useMemo<ColumnDef<WorkOrderListItem>[]>(
     () => [
       {
         accessorKey: "orderNumber",

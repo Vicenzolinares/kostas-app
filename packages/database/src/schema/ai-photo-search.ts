@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, integer, numeric, vector } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, numeric, vector } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { itemsInventory } from "./items-inventory";
 import { fabricInventory } from "./fabric-inventory";

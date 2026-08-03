@@ -42,7 +42,6 @@ async function EmailDetail({ id }: { id: string }) {
           ) : null}
           <div className="mt-4 border-t border-border pt-4">
             {email.bodyHtml ? (
-              // eslint-disable-next-line react/no-danger
               <div dangerouslySetInnerHTML={{ __html: email.bodyHtml }} />
             ) : (
               <p className="whitespace-pre-wrap">{email.bodyText ?? "(no content)"}</p>

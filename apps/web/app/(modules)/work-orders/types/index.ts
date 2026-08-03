@@ -2,9 +2,12 @@ import type { WorkOrder, WorkOrderFabric } from "@kostas/database/schema";
 
 export type { WorkOrder, WorkOrderFabric };
 
-export interface WorkOrderWithRelations extends WorkOrder {
+export interface WorkOrderListItem extends WorkOrder {
   project: { id: string; name: string; clientName: string } | null;
   assignedTo: { id: string; name: string } | null;
+}
+
+export interface WorkOrderWithRelations extends WorkOrderListItem {
   fabrics: (WorkOrderFabric & { fabric: { id: string; name: string; fabricCode: string } })[];
 }
 

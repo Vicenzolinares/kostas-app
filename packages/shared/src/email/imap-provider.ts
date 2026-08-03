@@ -9,6 +9,12 @@ import {
   type SendEmailResult,
 } from "./types";
 
+function toBuffer(content: string | ArrayBuffer | Uint8Array): Buffer {
+  if (typeof content === "string") return Buffer.from(content, "base64");
+  if (content instanceof Uint8Array) return Buffer.from(content);
+  return Buffer.from(new Uint8Array(content));
+}
+
 export interface ImapEmailProviderOptions {
   imapHost: string;
   imapPort: number;
@@ -85,7 +91,7 @@ export class ImapEmailProvider implements EmailProvider {
             attachments: parsed.attachments.map((att) => ({
               filename: att.filename ?? "attachment",
               contentType: att.mimeType,
-              content: Buffer.from(att.content),
+              content: toBuffer(att.content),
             })),
             receivedAt: parsed.date ? new Date(parsed.date) : new Date(),
           });
