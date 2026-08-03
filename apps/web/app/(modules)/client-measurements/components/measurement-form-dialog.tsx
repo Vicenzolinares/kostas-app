@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import dynamic from "next/dynamic";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -25,7 +26,22 @@ import {
   type CreateClientMeasurementInput,
 } from "@kostas/shared/schemas";
 import { createMeasurementAction } from "../api/actions";
-import { MeasurementCanvasEditor } from "./measurement-canvas";
+
+// react-konva pulls in konva's Node build during SSR, which requires the
+// optional native `canvas` package we don't install (we only ever draw
+// in the browser). Load the canvas editor client-side only.
+const MeasurementCanvasEditor = dynamic(
+  () =>
+    import("./measurement-canvas").then((mod) => mod.MeasurementCanvasEditor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[420px] w-[640px] items-center justify-center rounded-md border border-border bg-muted/30 text-sm text-muted-foreground">
+        Loading canvas…
+      </div>
+    ),
+  },
+);
 
 interface ProjectOption {
   id: string;
