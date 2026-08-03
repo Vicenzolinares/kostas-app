@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   DndContext,
   type DragEndEvent,
@@ -95,6 +95,17 @@ export function ItemsTable({
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
+
+  // `useState(initialItems)` only seeds state on mount — it does not
+  // re-sync when the `items` prop changes on a later render. After
+  // creating a row, the server action revalidates and the parent Server
+  // Component re-fetches and passes a new `items` array down, but without
+  // this effect the table kept rendering its stale initial snapshot, so
+  // the newly created row never appeared (drag-reorder/delete still
+  // worked since those mutate local state directly).
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
 
   const columns = useMemo<ColumnDef<ItemInventory>[]>(
     () => [
