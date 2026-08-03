@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:17-alpine
+        image: pgvector/pgvector:pg17
         env:
           POSTGRES_USER: kostas
           POSTGRES_PASSWORD: kostas
@@ -62,7 +62,7 @@ jobs:
     needs: lint-typecheck-test-build
     services:
       postgres:
-        image: postgres:17-alpine
+        image: pgvector/pgvector:pg17
         env:
           POSTGRES_USER: kostas
           POSTGRES_PASSWORD: kostas

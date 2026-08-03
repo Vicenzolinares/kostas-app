@@ -2,7 +2,10 @@ name: kostas-app
 
 services:
   postgres:
-    image: postgres:17-alpine
+    # pgvector-enabled Postgres image (module 12: AI Photo Search uses the
+    # `vector` extension for embedding similarity search). Drop-in
+    # compatible with postgres:17-alpine otherwise.
+    image: pgvector/pgvector:pg17
     restart: unless-stopped
     environment:
       POSTGRES_USER: kostas
