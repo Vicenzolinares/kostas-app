@@ -3,4 +3,5 @@
 // tries to resolve in Node environments. The browser build never needs
 // it — see react-pdf's own Turbopack setup instructions and
 // next.config.ts's `turbopack.resolveAlias`.
-export default {};
+const emptyModule = {};
+export default emptyModule;
