@@ -18,6 +18,13 @@ const nextConfig: NextConfig = {
     // the workspace lockfile correctly instead of inferring apps/web (or
     // worse, apps/) as the root.
     root: path.join(currentDir, "..", ".."),
+    // react-pdf's dependency pdfjs-dist optionally resolves `canvas` (a
+    // native Node module, irrelevant in the browser). Webpack builds alias
+    // it away via `config.resolve.alias`; Turbopack's equivalent is this
+    // resolveAlias — see react-pdf's README "Next.js" section.
+    resolveAlias: {
+      canvas: "./empty-module.ts",
+    },
   },
 };
 
