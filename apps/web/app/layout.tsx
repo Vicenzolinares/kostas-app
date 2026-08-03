@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import { SerwistProvider } from "@serwist/turbopack/react";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -15,6 +16,10 @@ export const metadata: Metadata = {
   description: "Upholstery & furniture manufacturing ERP",
 };
 
+export const viewport: Viewport = {
+  themeColor: "#0f172a",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,7 +32,14 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
     >
       <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+        {/* Only module 15 (Employee Portal) needs offline support, but the
+            service worker registration is cheap and app-shell-wide is the
+            simplest place for it — see app/sw.ts for the actual caching
+            strategy (network-only outside production, so this is a no-op
+            in local dev). */}
+        <SerwistProvider swUrl="/serwist/sw.js">
+          <Providers>{children}</Providers>
+        </SerwistProvider>
       </body>
     </html>
   );

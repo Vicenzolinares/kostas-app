@@ -4,7 +4,12 @@ import { verifySessionToken } from "@kostas/auth/jwt";
 import type { SessionTokenPayload } from "@kostas/auth/jwt";
 
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME ?? "kostas_session";
-const PUBLIC_PATHS = ["/login", "/signup"];
+// /offline: the module 15 PWA's offline fallback page must render without
+// a session (the whole point is it's shown when the network — and thus
+// auth — is unavailable). /serwist: serves the service worker script
+// itself (app/serwist/[path]/route.ts), which the browser fetches before
+// any page/cookie context applies.
+const PUBLIC_PATHS = ["/login", "/signup", "/offline", "/serwist"];
 
 // Role allow-lists per route prefix, checked in declaration order (first
 // match wins). Paths not listed here are auth-only (any signed-in role).
