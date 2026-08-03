@@ -3,12 +3,12 @@ import { users, projects, fabricInventory, itemsInventory } from "../schema";
 // NOTE: seed script intentionally hashes its own admin password inline
 // (bcryptjs) rather than depending on @kostas/auth, to avoid a circular
 // package dependency (auth depends on database for the users table).
-import { hash } from "bcryptjs";
+import bcrypt from "bcryptjs";
 
 async function main() {
   console.log("Seeding local database...");
 
-  const passwordHash = await hash("password123", 10);
+  const passwordHash = await bcrypt.hash("password123", 10);
 
   const [admin] = await db
     .insert(users)
