@@ -10,9 +10,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="mb-4 px-2">
           <p className="text-lg font-semibold">Kostas ERP</p>
         </div>
-        {NAV_ITEMS.map((item) => (
-          <NavLink key={item.href} item={item} />
-        ))}
+        {/* NavLink reads the current pathname (a runtime API) to
+            highlight the active route, so it must render inside
+            Suspense under Cache Components. */}
+        <Suspense
+          fallback={NAV_ITEMS.map((item) => (
+            <span
+              key={item.href}
+              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground"
+            >
+              {item.label}
+            </span>
+          ))}
+        >
+          {NAV_ITEMS.map((item) => (
+            <NavLink key={item.href} item={item} />
+          ))}
+        </Suspense>
       </aside>
       <div className="flex flex-1 flex-col">
         <header className="flex h-14 items-center justify-between border-b border-border px-6">
