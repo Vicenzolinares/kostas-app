@@ -55,6 +55,36 @@ These are **not** part of this PR:
 - **OpenAI** (AI photo search module).
 - **Yahoo IMAP** (email integration module).
 
+## Verification status
+
+Run from the agent sandbox that built this PR (no Docker/Postgres available
+there):
+
+- `pnpm typecheck` — green, all 5 packages.
+- `pnpm lint` — green, 0 errors (a handful of informational "React Compiler
+  will skip memoizing this" warnings remain; harmless, since `reactCompiler`
+  isn't enabled in `next.config.ts`).
+- `pnpm test` (Vitest) — green, 14/14 unit tests.
+- `pnpm build` — green. Confirmed Turbopack-compatible after fixing three
+  real issues surfaced along the way (see commit history): a
+  `turbopack.root` path miscalculation, react-konva pulling in Node-only
+  `canvas` during SSR (fixed via `next/dynamic(..., { ssr: false })`), and
+  three instances of Cache Components' "Uncached data was accessed outside
+  of Suspense" (searchParams/params read before their Suspense boundary,
+  and `usePathname()` in the nav needing its own boundary).
+- `pnpm test:e2e` (Playwright) — **not run against a live server in this
+  sandbox** (no Docker/Postgres available in the environment this PR was
+  built in). All 6 specs (`apps/web/e2e/*.spec.ts`, one per module) do
+  parse and list correctly via `playwright test --list`. They're designed
+  to run in `.github/workflows/ci.yml`, which provisions a real Postgres
+  service container, runs `db:migrate` + `db:seed`, builds, and then runs
+  the full suite — that CI run is the first real execution of these tests
+  and should be treated as the actual gate before merge.
+- `pnpm db:migrate` / `pnpm db:seed` — likewise not run locally for the
+  same reason; the generated migration SQL
+  (`packages/database/drizzle/0000_oval_marvel_zombies.sql`) was reviewed
+  by hand against the Drizzle schema instead.
+
 ## Running this locally
 
 ```bash
