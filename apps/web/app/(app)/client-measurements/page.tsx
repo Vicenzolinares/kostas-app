@@ -6,7 +6,12 @@ import {
 import { MeasurementsList } from "@/app/(modules)/client-measurements/components/measurements-list";
 import { MeasurementFormDialog } from "@/app/(modules)/client-measurements/components/measurement-form-dialog";
 
-async function MeasurementsSection({ projectId }: { projectId?: string }) {
+async function MeasurementsSection({
+  searchParams,
+}: {
+  searchParams: Promise<{ projectId?: string }>;
+}) {
+  const { projectId } = await searchParams;
   const [measurements, projects] = await Promise.all([
     listMeasurements(projectId),
     listProjectsForSelect(),
@@ -25,13 +30,11 @@ async function MeasurementsSection({ projectId }: { projectId?: string }) {
   );
 }
 
-export default async function ClientMeasurementsPage({
+export default function ClientMeasurementsPage({
   searchParams,
 }: {
   searchParams: Promise<{ projectId?: string }>;
 }) {
-  const { projectId } = await searchParams;
-
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -45,7 +48,7 @@ export default async function ClientMeasurementsPage({
           <p className="text-sm text-muted-foreground">Loading measurements…</p>
         }
       >
-        <MeasurementsSection projectId={projectId} />
+        <MeasurementsSection searchParams={searchParams} />
       </Suspense>
     </div>
   );
