@@ -1,0 +1,4 @@
+{
+  "extends": "@kostas/config/tsconfig/base.json",
+  "include": ["src"]
+}
