@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { createPortal } from "react-dom";
 import { GridStack, type GridStackWidget } from "gridstack";
 import "gridstack/dist/gridstack.css";
@@ -35,7 +42,6 @@ export function DashboardGrid({
 }) {
   const gridElRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<GridStack | null>(null);
-  const [mountedIds, setMountedIds] = useState<string[]>([]);
   // Portal target elements, keyed by widget id. Populated via callback
   // refs (a commit-phase effect), never read during render itself, since
   // reading ref.current inside render is unsafe.
@@ -45,14 +51,67 @@ export function DashboardGrid({
   const [pending, startTransition] = useTransition();
   const [savedAt, setSavedAt] = useState<Date | null>(null);
 
-  const layout =
-    initialLayout && initialLayout.length > 0
-      ? initialLayout
-      : DEFAULT_ORDER(widgets);
+  // Stable (memoized) per-widget callback refs. An inline arrow function
+  // passed as `ref` is a new function identity on every render, which
+  // makes React tear down and re-attach the ref (null, then the element)
+  // on every render. Since the ref body calls setState, that produced an
+  // infinite render loop ("Maximum update depth exceeded"). Caching one
+  // callback per widget id keeps the ref identity stable across renders
+  // so it only actually fires on real mount/unmount.
+  const portalRefCallbacks = useRef<
+    Record<string, (el: HTMLDivElement | null) => void>
+  >({});
+  const getPortalRefCallback = useCallback((id: string) => {
+    if (!portalRefCallbacks.current[id]) {
+      portalRefCallbacks.current[id] = (el: HTMLDivElement | null) => {
+        setPortalContainers((prev) => {
+          if (el) {
+            if (prev[id] === el) return prev;
+            return { ...prev, [id]: el };
+          }
+          if (!(id in prev)) return prev;
+          const rest = { ...prev };
+          delete rest[id];
+          return rest;
+        });
+      };
+    }
+    return portalRefCallbacks.current[id];
+  }, []);
+
+  // The set of widgets to render, in their saved (or default) grid
+  // position, computed synchronously from props so React renders the
+  // `.grid-stack-item` DOM nodes up front.
+  const mountedWidgets = useMemo(() => {
+    const layout =
+      initialLayout && initialLayout.length > 0
+        ? initialLayout
+        : DEFAULT_ORDER(widgets);
+
+    return layout
+      .filter((entry) => widgets.some((w) => w.id === entry.widget))
+      .map((entry) => ({
+        id: entry.widget,
+        x: entry.x,
+        y: entry.y,
+        w: entry.w,
+        h: entry.h,
+      }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- compute once from the initial props, matching the one-time GridStack.init() below
+  }, []);
 
   useEffect(() => {
     if (!gridElRef.current) return;
 
+    // GridStack.init() auto-discovers `.grid-stack-item` children already
+    // in the DOM (via their gs-x/gs-y/gs-w/gs-h attributes) and adopts
+    // them — it does not create new nodes. Previously this called
+    // grid.load(widgetOptions) with placeholder content, which made
+    // GridStack synthesize its *own* `.grid-stack-item` elements
+    // alongside the ones React was independently rendering from
+    // `mountedWidgets`, leaving two competing copies of every widget in
+    // the DOM (one correctly sized by GridStack, one inert/collapsed) and
+    // the portaled card content mounted into the wrong one.
     const grid = GridStack.init(
       {
         column: 12,
@@ -64,25 +123,10 @@ export function DashboardGrid({
     );
     gridRef.current = grid;
 
-    const widgetOptions: GridStackWidget[] = layout
-      .filter((entry) => widgets.some((w) => w.id === entry.widget))
-      .map((entry) => ({
-        id: entry.widget,
-        x: entry.x,
-        y: entry.y,
-        w: entry.w,
-        h: entry.h,
-        content: "",
-      }));
-
-    grid.load(widgetOptions);
-    setMountedIds(widgetOptions.map((w) => String(w.id)));
-
     return () => {
       grid.destroy(false);
       gridRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- initialize GridStack once on mount
   }, []);
 
   function handleSaveLayout() {
@@ -133,25 +177,22 @@ export function DashboardGrid({
         </div>
       </div>
       <div className="grid-stack" ref={gridElRef} data-testid="dashboard-grid">
-        {mountedIds.map((id) => {
-          const widget = widgets.find((w) => w.id === id);
+        {mountedWidgets.map(({ id, x, y, w, h }) => {
+          const widget = widgets.find((widget) => widget.id === id);
           if (!widget) return null;
           return (
-            <div key={id} className="grid-stack-item" gs-id={id}>
+            <div
+              key={id}
+              className="grid-stack-item"
+              gs-id={id}
+              gs-x={x}
+              gs-y={y}
+              gs-w={w}
+              gs-h={h}
+            >
               <div
                 className="grid-stack-item-content"
-                ref={(el) => {
-                  setPortalContainers((prev) => {
-                    if (el) {
-                      if (prev[id] === el) return prev;
-                      return { ...prev, [id]: el };
-                    }
-                    if (!(id in prev)) return prev;
-                    const rest = { ...prev };
-                    delete rest[id];
-                    return rest;
-                  });
-                }}
+                ref={getPortalRefCallback(id)}
               />
               {portalContainers[id]
                 ? createPortal(
