@@ -10,4 +10,10 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Items & Inventory", href: "/items-inventory" },
   { label: "Fabric Inventory", href: "/fabric-inventory" },
   { label: "Project Fabrics", href: "/project-fabrics" },
+  { label: "Hardware Inventory", href: "/hardware-inventory" },
+  { label: "Work Orders", href: "/work-orders" },
+  { label: "Calendar", href: "/calendar" },
+  { label: "Finance", href: "/finance" },
+  { label: "Emails", href: "/emails" },
+  { label: "AI Photo Search", href: "/photo-search" },
 ];
