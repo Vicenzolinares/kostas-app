@@ -5,9 +5,9 @@ import { test as base, expect } from "@playwright/test";
  * before each test. Assumes `pnpm db:seed` has been run against the
  * target database.
  */
+/* eslint-disable react-hooks/rules-of-hooks -- `use` below is Playwright's
+   fixture-teardown callback, not React's `use()` hook. */
 export const test = base.extend({
-  // eslint-disable-next-line react-hooks/rules-of-hooks -- `use` here is
-  // Playwright's fixture-teardown callback, not React's `use()` hook.
   page: async ({ page }, use) => {
     await page.goto("/login");
     await page.getByLabel(/email/i).fill("admin@kostas.local");
@@ -17,5 +17,6 @@ export const test = base.extend({
     await use(page);
   },
 });
+/* eslint-enable react-hooks/rules-of-hooks */
 
 export { expect };
