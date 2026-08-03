@@ -6,7 +6,8 @@ import { getProjectById } from "@/app/(modules)/projects/api/queries";
 import { ProjectStatusTimeline } from "@/app/(modules)/projects/components/status-timeline";
 import { ProjectFormDialog } from "@/app/(modules)/projects/components/project-form-dialog";
 
-async function ProjectDetail({ id }: { id: string }) {
+async function ProjectDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const project = await getProjectById(id);
   if (!project) notFound();
 
@@ -17,7 +18,10 @@ async function ProjectDetail({ id }: { id: string }) {
           <h1 className="text-2xl font-semibold">{project.name}</h1>
           <p className="text-sm text-muted-foreground">{project.clientName}</p>
         </div>
-        <ProjectFormDialog project={project} trigger={<Button variant="outline">Edit</Button>} />
+        <ProjectFormDialog
+          project={project}
+          trigger={<Button variant="outline">Edit</Button>}
+        />
       </div>
 
       <Card>
@@ -32,11 +36,15 @@ async function ProjectDetail({ id }: { id: string }) {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Client measurements ({project.clientMeasurements.length})</CardTitle>
+            <CardTitle>
+              Client measurements ({project.clientMeasurements.length})
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
             {project.clientMeasurements.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No measurements recorded yet.</p>
+              <p className="text-sm text-muted-foreground">
+                No measurements recorded yet.
+              </p>
             ) : (
               project.clientMeasurements.map((m) => (
                 <p key={m.id} className="text-sm">
@@ -55,11 +63,15 @@ async function ProjectDetail({ id }: { id: string }) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Project fabrics ({project.projectFabrics.length})</CardTitle>
+            <CardTitle>
+              Project fabrics ({project.projectFabrics.length})
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
             {project.projectFabrics.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No fabrics linked yet.</p>
+              <p className="text-sm text-muted-foreground">
+                No fabrics linked yet.
+              </p>
             ) : (
               project.projectFabrics.map((pf) => (
                 <p key={pf.id} className="text-sm">
@@ -91,15 +103,18 @@ async function ProjectDetail({ id }: { id: string }) {
   );
 }
 
-export default async function ProjectDetailPage({
+export default function ProjectDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
   return (
-    <Suspense fallback={<p className="text-sm text-muted-foreground">Loading project…</p>}>
-      <ProjectDetail id={id} />
+    <Suspense
+      fallback={
+        <p className="text-sm text-muted-foreground">Loading project…</p>
+      }
+    >
+      <ProjectDetail params={params} />
     </Suspense>
   );
 }

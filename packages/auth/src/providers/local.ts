@@ -1,11 +1,17 @@
-import { compare, hash } from "bcryptjs";
+import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import type { Database } from "@kostas/database";
 import { users } from "@kostas/database/schema";
 import type { UserRole } from "@kostas/shared/schemas";
 import type { CookieStore } from "../cookie-store";
 import { signSessionToken, verifySessionToken } from "../jwt";
-import { AuthError, type AuthProvider, type Session, type SignInParams, type SignUpParams } from "../types";
+import {
+  AuthError,
+  type AuthProvider,
+  type Session,
+  type SignInParams,
+  type SignUpParams,
+} from "../types";
 
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 const BCRYPT_ROUNDS = 10;
@@ -25,22 +31,31 @@ export class LocalAuthProvider implements AuthProvider {
   private readonly cookieName: string;
 
   constructor(private readonly options: LocalAuthProviderOptions) {
-    this.cookieName = options.cookieName ?? process.env.SESSION_COOKIE_NAME ?? "kostas_session";
+    this.cookieName =
+      options.cookieName ?? process.env.SESSION_COOKIE_NAME ?? "kostas_session";
   }
 
   private async cookieStore(): Promise<CookieStore> {
     return this.options.cookies();
   }
 
-  async signUp({ name, email, password, role }: SignUpParams): Promise<Session> {
+  async signUp({
+    name,
+    email,
+    password,
+    role,
+  }: SignUpParams): Promise<Session> {
     const existing = await this.options.db.query.users.findFirst({
       where: eq(users.email, email.toLowerCase()),
     });
     if (existing) {
-      throw new AuthError("An account with this email already exists.", "email_taken");
+      throw new AuthError(
+        "An account with this email already exists.",
+        "email_taken",
+      );
     }
 
-    const passwordHash = await hash(password, BCRYPT_ROUNDS);
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     const [user] = await this.options.db
       .insert(users)
       .values({
@@ -70,7 +85,7 @@ export class LocalAuthProvider implements AuthProvider {
     if (!user) {
       throw new AuthError("Invalid email or password.", "invalid_credentials");
     }
-    const valid = await compare(password, user.passwordHash);
+    const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
       throw new AuthError("Invalid email or password.", "invalid_credentials");
     }
@@ -113,7 +128,10 @@ export class LocalAuthProvider implements AuthProvider {
       throw new AuthError("You must be signed in.", "unauthenticated");
     }
     if (roles.length > 0 && !roles.includes(session.user.role)) {
-      throw new AuthError("You do not have permission to do this.", "forbidden");
+      throw new AuthError(
+        "You do not have permission to do this.",
+        "forbidden",
+      );
     }
     return session;
   }
