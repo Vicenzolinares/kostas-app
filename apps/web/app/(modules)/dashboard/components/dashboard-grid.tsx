@@ -51,32 +51,33 @@ export function DashboardGrid({
   const [pending, startTransition] = useTransition();
   const [savedAt, setSavedAt] = useState<Date | null>(null);
 
-  // Stable (memoized) per-widget callback refs. An inline arrow function
-  // passed as `ref` is a new function identity on every render, which
-  // makes React tear down and re-attach the ref (null, then the element)
-  // on every render. Since the ref body calls setState, that produced an
-  // infinite render loop ("Maximum update depth exceeded"). Caching one
-  // callback per widget id keeps the ref identity stable across renders
-  // so it only actually fires on real mount/unmount.
-  const portalRefCallbacks = useRef<
-    Record<string, (el: HTMLDivElement | null) => void>
-  >({});
-  const getPortalRefCallback = useCallback((id: string) => {
-    if (!portalRefCallbacks.current[id]) {
-      portalRefCallbacks.current[id] = (el: HTMLDivElement | null) => {
-        setPortalContainers((prev) => {
-          if (el) {
-            if (prev[id] === el) return prev;
-            return { ...prev, [id]: el };
-          }
-          if (!(id in prev)) return prev;
-          const rest = { ...prev };
-          delete rest[id];
-          return rest;
-        });
-      };
-    }
-    return portalRefCallbacks.current[id];
+  // A single stable ref callback (identity never changes across renders,
+  // since it has no dependencies) shared by every widget. An inline arrow
+  // function passed as `ref` would be a new identity every render, making
+  // React tear down and re-attach the ref on every render; since the ref
+  // body calls setState, that produced an infinite render loop ("Maximum
+  // update depth exceeded"). The widget id is read from the DOM node's
+  // own `data-widget-id` attribute (set below) rather than captured via a
+  // per-id closure, since memoizing one callback per id would mean
+  // reading a ref during render to look it up — refs may only be
+  // accessed outside of render. React 19 ref callbacks may return a
+  // cleanup function (called on unmount instead of invoking the callback
+  // again with `null`), which lets this stay a single stable function
+  // while still capturing `id` correctly for its own cleanup.
+  const handlePortalRef = useCallback((el: HTMLDivElement | null) => {
+    const id = el?.dataset.widgetId;
+    if (!el || !id) return;
+    setPortalContainers((prev) =>
+      prev[id] === el ? prev : { ...prev, [id]: el },
+    );
+    return () => {
+      setPortalContainers((prev) => {
+        if (!(id in prev)) return prev;
+        const rest = { ...prev };
+        delete rest[id];
+        return rest;
+      });
+    };
   }, []);
 
   // The set of widgets to render, in their saved (or default) grid
@@ -192,7 +193,8 @@ export function DashboardGrid({
             >
               <div
                 className="grid-stack-item-content"
-                ref={getPortalRefCallback(id)}
+                data-widget-id={id}
+                ref={handlePortalRef}
               />
               {portalContainers[id]
                 ? createPortal(
