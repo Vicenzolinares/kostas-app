@@ -15,12 +15,16 @@ interface PayInvoiceButtonProps {
 }
 
 /**
- * Kicks off a Stripe PaymentIntent for the invoice total. Disabled with a
- * clear message when Stripe isn't configured (no STRIPE_SECRET_KEY) — see
- * docs/PROGRESS.md for what's needed to go live. A full Stripe Elements
- * checkout form is out of scope here; this creates the PaymentIntent and
- * surfaces the client secret, which a payment element could mount against
- * once a live Stripe account exists.
+ * Payment controls for an invoice with an outstanding balance.
+ *
+ * With Stripe configured, this kicks off a PaymentIntent for the invoice
+ * total. A full Stripe Elements checkout form is out of scope here; this
+ * creates the intent and surfaces the client secret, which a payment
+ * element could mount against.
+ *
+ * Without STRIPE_SECRET_KEY, real collection stays disabled and a
+ * clearly-labelled demo action records a local simulated payment instead —
+ * see recordDemoPaymentAction and docs/PHASE_1_DEMO_STATUS.md.
  */
 export function PayInvoiceButton({
   invoiceId,
