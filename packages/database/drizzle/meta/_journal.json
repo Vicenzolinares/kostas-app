@@ -15,6 +15,13 @@
       "when": 1785793489375,
       "tag": "0001_flimsy_silver_surfer",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785877273528,
+      "tag": "0002_puzzling_photon",
+      "breakpoints": true
     }
   ]
 }
