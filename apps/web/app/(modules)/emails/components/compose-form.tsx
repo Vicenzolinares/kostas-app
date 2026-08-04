@@ -6,7 +6,10 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Card, CardContent, Input, Label, Textarea } from "@kostas/ui";
-import { composeEmailSchema, type ComposeEmailInput } from "@kostas/shared/schemas";
+import {
+  composeEmailSchema,
+  type ComposeEmailInput,
+} from "@kostas/shared/schemas";
 import { composeEmailAction } from "../api/actions";
 
 // The compose form collects recipients as comma-separated text inputs;
@@ -27,7 +30,23 @@ function splitAddresses(value: string | undefined): string[] {
     .filter(Boolean);
 }
 
-export function ComposeForm() {
+export interface ComposeFormProps {
+  /** Prefilled values for reply/forward; empty for a fresh message. */
+  defaultValues?: Partial<ComposeFormValues>;
+  /** Carried through so replies stay attached to the same project. */
+  projectId?: string | null;
+  /** Threads the reply to its parent via the RFC In-Reply-To header. */
+  inReplyToMessageId?: string | null;
+  /** True when messages are stored locally instead of being delivered. */
+  demoMode?: boolean;
+}
+
+export function ComposeForm({
+  defaultValues,
+  projectId,
+  inReplyToMessageId,
+  demoMode = false,
+}: ComposeFormProps = {}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +57,7 @@ export function ComposeForm() {
     formState: { errors },
   } = useForm<ComposeFormValues>({
     resolver: zodResolver(composeFormSchema),
+    defaultValues,
   });
 
   function onSubmit(values: ComposeFormValues) {
@@ -47,11 +67,15 @@ export function ComposeForm() {
       cc: splitAddresses(values.cc),
       subject: values.subject,
       bodyHtml: values.bodyHtml,
+      projectId: projectId ?? null,
+      inReplyToMessageId: inReplyToMessageId ?? null,
     };
 
     const parsed = composeEmailSchema.safeParse(payload);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Please check the form for errors.");
+      setError(
+        parsed.error.issues[0]?.message ?? "Please check the form for errors.",
+      );
       return;
     }
 
@@ -71,8 +95,14 @@ export function ComposeForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="to">To (comma-separated)</Label>
-            <Input id="to" placeholder="client@example.com" {...register("to")} />
-            {errors.to ? <p className="text-xs text-destructive">{errors.to.message}</p> : null}
+            <Input
+              id="to"
+              placeholder="client@example.com"
+              {...register("to")}
+            />
+            {errors.to ? (
+              <p className="text-xs text-destructive">{errors.to.message}</p>
+            ) : null}
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="cc">CC (comma-separated, optional)</Label>
@@ -81,17 +111,39 @@ export function ComposeForm() {
           <div className="flex flex-col gap-2">
             <Label htmlFor="subject">Subject</Label>
             <Input id="subject" {...register("subject")} />
-            {errors.subject ? <p className="text-xs text-destructive">{errors.subject.message}</p> : null}
+            {errors.subject ? (
+              <p className="text-xs text-destructive">
+                {errors.subject.message}
+              </p>
+            ) : null}
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="bodyHtml">Message</Label>
             <Textarea id="bodyHtml" rows={10} {...register("bodyHtml")} />
-            {errors.bodyHtml ? <p className="text-xs text-destructive">{errors.bodyHtml.message}</p> : null}
+            {errors.bodyHtml ? (
+              <p className="text-xs text-destructive">
+                {errors.bodyHtml.message}
+              </p>
+            ) : null}
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between gap-4">
+            {demoMode ? (
+              <p className="text-xs text-muted-foreground">
+                Demo mode — this message is saved to the local mailbox and is
+                not delivered.
+              </p>
+            ) : (
+              <span />
+            )}
             <Button type="submit" disabled={pending}>
-              {pending ? "Sending…" : "Send"}
+              {pending
+                ? demoMode
+                  ? "Saving…"
+                  : "Sending…"
+                : demoMode
+                  ? "Save to mailbox"
+                  : "Send"}
             </Button>
           </div>
         </form>

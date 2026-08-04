@@ -6,6 +6,8 @@ import { AIVisionConfigurationError } from "@kostas/shared/ai-vision";
 import { authProvider } from "@/lib/auth";
 import { storageProvider } from "@/lib/storage";
 import { aiVisionProvider } from "@/lib/ai-vision";
+import { aiVisionDemoMode } from "@/lib/demo-mode";
+import { findDemoMatches, DEMO_MATCH_THRESHOLD } from "@/lib/demo-photo-match";
 import { findSimilarPhotos } from "@/app/(modules)/photo-search/api/queries";
 
 const MAX_DIMENSION = 1024;
@@ -15,10 +17,14 @@ const MAX_DIMENSION = 1024;
  * pipeline for module 12. Runs as a route handler (not a server action)
  * since it accepts multipart file data.
  *
- * When OPENAI_API_KEY is unset, the AIVisionProvider's null
- * implementation throws AIVisionConfigurationError — we still persist
- * the upload (status "pending") so the photo isn't lost, and return a
- * clear "AI photo search is not configured" message instead of a 500.
+ * When OPENAI_API_KEY is unset the module runs in demo mode: upload, Sharp
+ * optimization and local storage are unchanged, but ranking falls back to a
+ * local colour-similarity heuristic (see lib/demo-photo-match) instead of
+ * calling a model. `embedding` stays null in that case — a fake vector
+ * would poison the pgvector index for real searches later.
+ *
+ * The configured path below is untouched and takes over as soon as a key
+ * exists.
  */
 export async function POST(request: NextRequest) {
   const session = await authProvider.getSession();
@@ -39,7 +45,12 @@ export async function POST(request: NextRequest) {
   // storage costs down.
   const optimized = await sharp(inputBuffer)
     .rotate()
-    .resize({ width: MAX_DIMENSION, height: MAX_DIMENSION, fit: "inside", withoutEnlargement: true })
+    .resize({
+      width: MAX_DIMENSION,
+      height: MAX_DIMENSION,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
     .jpeg({ quality: 82 })
     .toBuffer();
 
@@ -55,7 +66,36 @@ export async function POST(request: NextRequest) {
     .returning();
 
   if (!search) {
-    return NextResponse.json({ error: "Failed to record upload" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to record upload" },
+      { status: 500 },
+    );
+  }
+
+  if (aiVisionDemoMode) {
+    const { matches, description } = await findDemoMatches(optimized);
+    const topMatch = matches[0];
+    const status =
+      topMatch && topMatch.similarity >= DEMO_MATCH_THRESHOLD
+        ? "matched"
+        : "no_match";
+
+    await db
+      .update(photoSearches)
+      .set({
+        topMatches: JSON.stringify(matches),
+        confidenceScore: topMatch ? String(topMatch.similarity) : null,
+        status,
+      })
+      .where(eq(photoSearches.id, search.id));
+
+    return NextResponse.json({
+      id: search.id,
+      status,
+      description,
+      matches,
+      demoMode: true,
+    });
   }
 
   try {
@@ -66,7 +106,8 @@ export async function POST(request: NextRequest) {
 
     const matches = await findSimilarPhotos(embedding);
     const topMatch = matches[0];
-    const status = topMatch && topMatch.similarity >= 0.8 ? "matched" : "no_match";
+    const status =
+      topMatch && topMatch.similarity >= 0.8 ? "matched" : "no_match";
 
     await db
       .update(photoSearches)
@@ -93,8 +134,14 @@ export async function POST(request: NextRequest) {
     }
     await db
       .update(photoSearches)
-      .set({ status: "no_match", errorMessage: err instanceof Error ? err.message : String(err) })
+      .set({
+        status: "no_match",
+        errorMessage: err instanceof Error ? err.message : String(err),
+      })
       .where(eq(photoSearches.id, search.id));
-    return NextResponse.json({ error: "Failed to analyze image" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to analyze image" },
+      { status: 500 },
+    );
   }
 }
