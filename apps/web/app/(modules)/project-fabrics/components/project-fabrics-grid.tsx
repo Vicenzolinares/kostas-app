@@ -7,16 +7,18 @@ import {
   ClientSideRowModelModule,
   TextFilterModule,
   ValidationModule,
+  themeQuartz,
   type ColDef,
   type ICellRendererParams,
 } from "ag-grid-community";
-import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-quartz.css";
 import { projectFabricStatusValues } from "@kostas/shared/schemas";
 import { updateProjectFabricStatusAction } from "../api/actions";
 import { PROJECT_FABRIC_STATUS_LABEL } from "./status-pipeline";
 import type { ProjectFabricWithRelations } from "../types";
 
+// Styling goes through v33's Theming API (the `theme` grid option below),
+// not the v32 CSS files — see the note in fabric-inventory's fabric-grid.tsx.
+// Importing `styles/ag-grid.css` here throws "AG Grid: error #239".
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
   TextFilterModule,
@@ -97,11 +99,9 @@ export function ProjectFabricsGrid({
   );
 
   return (
-    <div
-      className="ag-theme-quartz h-[480px] w-full"
-      data-testid="project-fabrics-grid"
-    >
+    <div className="h-[480px] w-full" data-testid="project-fabrics-grid">
       <AgGridReact<ProjectFabricRow>
+        theme={themeQuartz}
         rowData={rowData}
         columnDefs={columnDefs}
         defaultColDef={{ sortable: true, resizable: true }}

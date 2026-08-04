@@ -9,16 +9,22 @@ import {
   NumberFilterModule,
   NumberEditorModule,
   ValidationModule,
+  themeQuartz,
   type ColDef,
   type CellValueChangedEvent,
 } from "ag-grid-community";
-import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-quartz.css";
 import { updateFabricStockAction } from "../api/actions";
 import type { FabricInventory } from "../types";
 
 // AG Grid Community only — Enterprise (pivot/tree-data/range-selection)
 // is intentionally out of scope; see docs/TECH_STACK.md.
+//
+// Styling goes through v33's Theming API (the `theme` grid option below),
+// NOT the v32 CSS files. Importing `styles/ag-grid.css` +
+// `styles/ag-theme-quartz.css` alongside it throws "AG Grid: error #239"
+// and produces broken styling, because the CSS themes and the Theming API
+// both try to own the same variables. Don't re-add those imports or the
+// `ag-theme-quartz` wrapper class — pass a theme object here instead.
 // NumberEditorModule is required because the `yardsInStock` column below
 // is `editable: true` with a numeric value — AG Grid v33's default
 // number cell editor lives in its own module and must be registered
@@ -124,9 +130,10 @@ export function FabricGrid({ fabrics }: { fabrics: FabricInventory[] }) {
   );
 
   return (
-    <div className="ag-theme-quartz h-[520px] w-full" data-testid="fabric-grid">
+    <div className="h-[520px] w-full" data-testid="fabric-grid">
       <AgGridReact<FabricRow>
         ref={gridRef}
+        theme={themeQuartz}
         rowData={rowData}
         columnDefs={columnDefs}
         defaultColDef={{ sortable: true, resizable: true }}
