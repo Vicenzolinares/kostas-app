@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "dotenv -e ../../.env -- next dev",
+    "build": "dotenv -e ../../.env -- next build",
+    "start": "dotenv -e ../../.env -- next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test",
-    "worker:email-sync": "tsx lib/jobs/email-sync-worker.ts"
+    "test:e2e": "dotenv -e ../../.env -- playwright test",
+    "worker:email-sync": "dotenv -e ../../.env -- tsx lib/jobs/email-sync-worker.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -93,6 +93,7 @@
     "@types/react-dom": "^19",
     "@types/nodemailer": "^6.4.17",
     "@types/react-window": "^1.8.8",
+    "dotenv-cli": "^8.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
     "tailwindcss": "^4",

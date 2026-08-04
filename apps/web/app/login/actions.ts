@@ -25,10 +25,22 @@ export async function signInAction(
   try {
     await authProvider.signIn(parsed.data);
   } catch (err) {
+    // AuthError is the expected, user-facing case (bad credentials): its
+    // message is written for the person signing in, so show it as-is.
     if (err instanceof AuthError) {
       return { error: err.message };
     }
-    return { error: "Something went wrong. Please try again." };
+    // Anything else is a real fault — a misconfigured AUTH_SECRET, the
+    // database being unreachable, etc. Never show that to the user, but do
+    // not discard it either: without this log the only trace of a broken
+    // deployment was a generic "try again" that looks like a wrong password.
+    console.error("[signInAction] sign-in failed unexpectedly:", err);
+    return {
+      error:
+        process.env.NODE_ENV === "production"
+          ? "Something went wrong. Please try again."
+          : `Sign-in failed: ${err instanceof Error ? err.message : String(err)}`,
+    };
   }
 
   redirect("/dashboard");
