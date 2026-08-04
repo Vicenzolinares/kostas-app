@@ -890,114 +890,167 @@ async function main() {
   const insertedDepartments = await db
     .insert(departments)
     .values([
-      { key: "cutting", name: "Cutting", sortOrder: 1, capacityPerDay: 12 },
-      { key: "sewing", name: "Sewing", sortOrder: 2, capacityPerDay: 8 },
+      {
+        key: "seamstress",
+        name: "Seamstress Room",
+        sortOrder: 1,
+        capacityPerDay: 10,
+      },
       {
         key: "upholstery",
-        name: "Upholstery",
-        sortOrder: 3,
+        name: "Upholstery Room",
+        sortOrder: 2,
         capacityPerDay: 6,
       },
       {
-        key: "frame_shop",
-        name: "Frame Shop",
-        sortOrder: 4,
+        key: "carpentry",
+        name: "Carpentry Room",
+        sortOrder: 3,
         capacityPerDay: 5,
       },
       {
-        key: "quality_check",
-        name: "Quality Check",
-        sortOrder: 5,
+        key: "paint",
+        name: "Paint Department",
+        sortOrder: 4,
+        capacityPerDay: 8,
+      },
+      { key: "warehouse", name: "Warehouse", sortOrder: 5, capacityPerDay: 12 },
+      {
+        key: "office",
+        name: "In The Office",
+        sortOrder: 6,
         capacityPerDay: 15,
       },
-      { key: "delivery", name: "Delivery", sortOrder: 6, capacityPerDay: 10 },
     ])
     .returning();
   const dept = new Map(insertedDepartments.map((d) => [d.key, d]));
 
-  // Spread across every status so the Shop Board / Department Status views
-  // show a realistic mix rather than one column.
-  await db.insert(productionStages).values([
-    // Chen — mid-production
+  // Every department TV needs all three of its columns populated —
+  // "Working Now" (in_progress), "Up Next" (queued) and "Needs Attention"
+  // (blocked) — so each of the six screens is worth looking at, not just
+  // the busiest one. Task labels carry both languages: they're shop-floor
+  // content the office writes per job, not static UI strings.
+  const task = (id: string, en: string, es: string, done = false) => ({
+    id,
+    en,
+    es,
+    done,
+  });
+
+  const stageRows: (typeof productionStages.$inferInsert)[] = [
+    // --- Seamstress Room -------------------------------------------------
     {
       projectId: chen!.id,
-      departmentId: dept.get("cutting")!.id,
-      status: "done",
-      assignedTo: "Maria Gallardo",
-      startedAt: at(-6, 8),
-      completedAt: at(-5, 15),
-    },
-    {
-      projectId: chen!.id,
-      departmentId: dept.get("sewing")!.id,
+      departmentId: dept.get("seamstress")!.id,
       status: "in_progress",
       assignedTo: "Tom Rivera",
       startedAt: at(-2, 8),
+      dueDate: at(2),
+      isRush: true,
       notes: "Boxing and welt on seat cushions.",
+      tasks: [
+        task("s1", "Cut Fabric", "Cortar Tela", true),
+        task("s2", "Sew Seat Cushions", "Coser Cojines de Asiento", true),
+        task("s3", "Sew Back Cushions", "Coser Cojines de Respaldo"),
+        task("s4", "Install Zippers", "Colocar Cierres"),
+      ],
     },
     {
-      projectId: chen!.id,
-      departmentId: dept.get("upholstery")!.id,
-      status: "queued",
-      assignedTo: "Andre Boateng",
-    },
-    // Harborview — batched contract work
-    {
-      projectId: harborview!.id,
-      departmentId: dept.get("cutting")!.id,
+      projectId: delgado!.id,
+      departmentId: dept.get("seamstress")!.id,
       status: "in_progress",
       assignedTo: "Maria Gallardo",
-      startedAt: at(-1, 8),
-      notes: "Batch 2 of 3 — 8 chairs.",
+      startedAt: at(-1, 9),
+      dueDate: at(1),
+      tasks: [
+        task("s5", "Cut Silk Damask", "Cortar Damasco de Seda", true),
+        task("s6", "Centre Pattern on Pads", "Centrar Patrón en Cojines", true),
+        task("s7", "Final Stitch", "Costura Final"),
+      ],
     },
     {
       projectId: harborview!.id,
-      departmentId: dept.get("sewing")!.id,
+      departmentId: dept.get("seamstress")!.id,
       status: "queued",
       assignedTo: "Tom Rivera",
+      dueDate: at(5),
     },
     {
-      projectId: harborview!.id,
-      departmentId: dept.get("frame_shop")!.id,
+      projectId: ashford!.id,
+      departmentId: dept.get("seamstress")!.id,
+      status: "queued",
+      assignedTo: "Maria Gallardo",
+      dueDate: at(8),
+    },
+    {
+      projectId: bellweather!.id,
+      departmentId: dept.get("seamstress")!.id,
       status: "blocked",
-      assignedTo: "Andre Boateng",
-      notes: "Waiting on replacement corner blocks (HW-2010) for 3 frames.",
+      assignedTo: "Tom Rivera",
+      blockedReason: "office_approval",
+      notes: "Quote not approved by the clinic board yet.",
     },
-    // Novak — restoration
     {
-      projectId: novak!.id,
-      departmentId: dept.get("frame_shop")!.id,
+      projectId: whitmore!.id,
+      departmentId: dept.get("seamstress")!.id,
       status: "done",
-      assignedTo: "Andre Boateng",
-      startedAt: at(-9, 8),
-      completedAt: at(-7, 16),
+      assignedTo: "Tom Rivera",
+      startedAt: at(-18, 8),
+      completedAt: at(-16, 12),
     },
+
+    // --- Upholstery Room --------------------------------------------------
     {
       projectId: novak!.id,
       departmentId: dept.get("upholstery")!.id,
       status: "in_progress",
       assignedTo: "Andre Boateng",
       startedAt: at(-1, 9),
+      dueDate: at(3),
       notes: "Eight-way hand tie in progress — slow by design.",
-    },
-    // Delgado — nearly out the door
-    {
-      projectId: delgado!.id,
-      departmentId: dept.get("sewing")!.id,
-      status: "done",
-      assignedTo: "Tom Rivera",
-      startedAt: at(-8, 8),
-      completedAt: at(-6, 12),
+      tasks: [
+        task("u1", "Strip Old Fabric", "Quitar Tela Vieja", true),
+        task("u2", "Replace Foam", "Reemplazar Espuma", true),
+        task("u3", "Upholster Arms", "Tapizar Brazos"),
+        task("u4", "Upholster Back", "Tapizar Respaldo"),
+        task("u5", "Final Inspection", "Inspección Final"),
+      ],
     },
     {
-      projectId: delgado!.id,
-      departmentId: dept.get("quality_check")!.id,
+      projectId: chen!.id,
+      departmentId: dept.get("upholstery")!.id,
       status: "in_progress",
-      assignedTo: "Victoria Alvarez",
+      assignedTo: "Maria Gallardo",
       startedAt: at(0, 8),
-      notes: "Checking seat pad alignment on all 8.",
+      dueDate: at(4),
+      tasks: [
+        task("u6", "Attach Cushion Foam", "Colocar Espuma", true),
+        task("u7", "Upholster Seat Deck", "Tapizar Asiento"),
+        task("u8", "Detailing", "Detalles"),
+      ],
     },
-    // Kingsley — ready to go
+    {
+      projectId: harborview!.id,
+      departmentId: dept.get("upholstery")!.id,
+      status: "queued",
+      assignedTo: "Andre Boateng",
+      dueDate: at(6),
+    },
+    {
+      projectId: torres!.id,
+      departmentId: dept.get("upholstery")!.id,
+      status: "queued",
+      assignedTo: "Maria Gallardo",
+      dueDate: at(9),
+    },
+    {
+      projectId: delgado!.id,
+      departmentId: dept.get("upholstery")!.id,
+      status: "blocked",
+      assignedTo: "Andre Boateng",
+      blockedReason: "fabric",
+      notes: "Client-supplied silk short by 2 yards.",
+    },
     {
       projectId: kingsley!.id,
       departmentId: dept.get("upholstery")!.id,
@@ -1006,33 +1059,167 @@ async function main() {
       startedAt: at(-5, 8),
       completedAt: at(-3, 14),
     },
+
+    // --- Carpentry Room ---------------------------------------------------
+    {
+      projectId: novak!.id,
+      departmentId: dept.get("carpentry")!.id,
+      status: "in_progress",
+      assignedTo: "Andre Boateng",
+      startedAt: at(-2, 8),
+      dueDate: at(2),
+      tasks: [
+        task("c1", "Repair Frame", "Reparar Estructura", true),
+        task("c2", "Reinforce Joints", "Reforzar Uniones", true),
+        task("c3", "Replace Legs", "Reemplazar Patas"),
+      ],
+    },
     {
       projectId: kingsley!.id,
-      departmentId: dept.get("delivery")!.id,
+      departmentId: dept.get("carpentry")!.id,
+      status: "queued",
+      assignedTo: "Andre Boateng",
+      dueDate: at(4),
+    },
+    {
+      projectId: torres!.id,
+      departmentId: dept.get("carpentry")!.id,
+      status: "queued",
+      assignedTo: "Andre Boateng",
+      dueDate: at(7),
+    },
+    {
+      projectId: harborview!.id,
+      departmentId: dept.get("carpentry")!.id,
+      status: "blocked",
+      assignedTo: "Andre Boateng",
+      blockedReason: "hardware",
+      notes: "Waiting on replacement corner blocks (HW-2010) for 3 frames.",
+    },
+    {
+      projectId: whitmore!.id,
+      departmentId: dept.get("carpentry")!.id,
+      status: "done",
+      assignedTo: "Andre Boateng",
+      startedAt: at(-20, 8),
+      completedAt: at(-18, 16),
+    },
+
+    // --- Paint Department -------------------------------------------------
+    {
+      projectId: novak!.id,
+      departmentId: dept.get("paint")!.id,
+      status: "in_progress",
+      assignedTo: "Elena Duarte",
+      startedAt: at(0, 9),
+      dueDate: at(3),
+      tasks: [
+        task("p1", "Sand Frame", "Lijar Estructura", true),
+        task("p2", "Prime", "Imprimar"),
+        task("p3", "Topcoat", "Capa Final"),
+        task("p4", "Cure / Dry", "Secado"),
+      ],
+    },
+    {
+      projectId: kingsley!.id,
+      departmentId: dept.get("paint")!.id,
+      status: "queued",
+      assignedTo: "Elena Duarte",
+      dueDate: at(5),
+    },
+    {
+      projectId: torres!.id,
+      departmentId: dept.get("paint")!.id,
+      status: "blocked",
+      assignedTo: "Elena Duarte",
+      blockedReason: "materials",
+      notes: "Outdoor-grade sealer on order.",
+    },
+
+    // --- Warehouse --------------------------------------------------------
+    {
+      projectId: harborview!.id,
+      departmentId: dept.get("warehouse")!.id,
+      status: "in_progress",
+      assignedTo: "Kostas Georgiou",
+      startedAt: at(0, 7),
+      dueDate: at(1),
+      isRush: true,
+      tasks: [
+        task("w1", "Pull Fabric", "Sacar Tela", true),
+        task("w2", "Pull Foam", "Sacar Espuma", true),
+        task("w3", "Pull Hardware", "Sacar Herrajes"),
+        task("w4", "Stage for Delivery", "Preparar para Entrega"),
+      ],
+    },
+    {
+      projectId: kingsley!.id,
+      departmentId: dept.get("warehouse")!.id,
       status: "queued",
       assignedTo: "Kostas Georgiou",
+      dueDate: at(3),
       notes: "Scheduled for install Thursday.",
     },
-    // Whitmore — historical, all complete
     {
-      projectId: whitmore!.id,
-      departmentId: dept.get("quality_check")!.id,
-      status: "done",
-      assignedTo: "Victoria Alvarez",
-      startedAt: at(-16, 8),
-      completedAt: at(-15, 11),
+      projectId: ashford!.id,
+      departmentId: dept.get("warehouse")!.id,
+      status: "blocked",
+      assignedTo: "Kostas Georgiou",
+      blockedReason: "fabric",
+      notes: "Drapery linen still in transit from Thibaut.",
     },
     {
       projectId: whitmore!.id,
-      departmentId: dept.get("delivery")!.id,
+      departmentId: dept.get("warehouse")!.id,
       status: "done",
       assignedTo: "Kostas Georgiou",
       startedAt: at(-13, 8),
       completedAt: at(-12, 13),
     },
-  ]);
+
+    // --- In The Office ----------------------------------------------------
+    {
+      projectId: delgado!.id,
+      departmentId: dept.get("office")!.id,
+      status: "in_progress",
+      assignedTo: "Victoria Alvarez",
+      startedAt: at(0, 8),
+      dueDate: at(1),
+      notes: "Checking seat pad alignment on all 8.",
+      tasks: [
+        task("o1", "Final QC Walkthrough", "Inspección Final", true),
+        task("o2", "Photograph for Records", "Fotografiar para Archivo"),
+        task("o3", "Issue Invoice", "Emitir Factura"),
+      ],
+    },
+    {
+      projectId: bellweather!.id,
+      departmentId: dept.get("office")!.id,
+      status: "queued",
+      assignedTo: "Priya Raman",
+      dueDate: at(6),
+    },
+    {
+      projectId: ashford!.id,
+      departmentId: dept.get("office")!.id,
+      status: "blocked",
+      assignedTo: "Priya Raman",
+      blockedReason: "office_approval",
+      notes: "Awaiting client sign-off on stripe direction.",
+    },
+    {
+      projectId: whitmore!.id,
+      departmentId: dept.get("office")!.id,
+      status: "done",
+      assignedTo: "Victoria Alvarez",
+      startedAt: at(-16, 8),
+      completedAt: at(-15, 11),
+    },
+  ];
+
+  await db.insert(productionStages).values(stageRows);
   console.log(
-    `  departments: ${insertedDepartments.length}, production stages: 14`,
+    `  departments: ${insertedDepartments.length}, production stages: ${stageRows.length}`,
   );
 
   // --- work orders -------------------------------------------------------
