@@ -62,3 +62,6 @@ apps/web/.local-storage/
 # postgres / redis data volumes
 docker/pgdata/
 docker/redisdata/
+
+# Local Playwright scratch scripts (screenshot tours, one-off probes)
+apps/web/__*.mjs

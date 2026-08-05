@@ -1,22 +1,36 @@
 import { authProvider } from "@/lib/auth";
 import { signOutAction } from "@/app/(app)/actions";
-import { Button } from "@kostas/ui";
+import { UserMenuShell } from "@/components/user-menu-shell";
+
+const ROLE_LABEL: Record<string, string> = {
+  admin: "Admin",
+  manager: "Manager",
+  sales: "Sales",
+  designer: "Designer",
+  shop_floor: "Shop Floor",
+  employee: "Employee",
+};
+
+/** Initials for the avatar chip — "Victoria Alvarez" -> "VA". */
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
 
 export async function UserMenu() {
   const session = await authProvider.getSession();
   if (!session) return null;
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="text-right text-sm">
-        <p className="font-medium leading-none">{session.user.name}</p>
-        <p className="text-xs text-muted-foreground capitalize">{session.user.role}</p>
-      </div>
-      <form action={signOutAction}>
-        <Button type="submit" variant="outline" size="sm">
-          Sign out
-        </Button>
-      </form>
-    </div>
+    <UserMenuShell
+      name={session.user.name}
+      roleLabel={ROLE_LABEL[session.user.role] ?? session.user.role}
+      initials={initials(session.user.name)}
+      signOut={signOutAction}
+    />
   );
 }

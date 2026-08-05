@@ -1,25 +1,29 @@
 @import "tailwindcss";
 
+/* Brand tokens sampled from the mockup deck (Kostas Upholstery App.pdf)
+   rather than picked by eye: --primary is the "+ New" button's solid fill,
+   --accent the active sidebar item's lavender, --background the app canvas
+   behind the white cards. */
 :root {
-  --background: #ffffff;
+  --background: #fbfbfd;
   --foreground: #0a0a0a;
   --card: #ffffff;
   --card-foreground: #0a0a0a;
   --popover: #ffffff;
   --popover-foreground: #0a0a0a;
-  --primary: #18181b;
-  --primary-foreground: #fafafa;
+  --primary: #4a3cae;
+  --primary-foreground: #ffffff;
   --secondary: #f4f4f5;
   --secondary-foreground: #18181b;
   --muted: #f4f4f5;
   --muted-foreground: #71717a;
-  --accent: #f4f4f5;
-  --accent-foreground: #18181b;
+  --accent: #f1edfc;
+  --accent-foreground: #4a3cae;
   --destructive: #dc2626;
   --destructive-foreground: #fafafa;
   --border: #e4e4e7;
   --input: #e4e4e7;
-  --ring: #a1a1aa;
+  --ring: #4a3cae;
   --radius: 0.5rem;
 }
 
@@ -58,17 +62,20 @@
     --card-foreground: #fafafa;
     --popover: #131316;
     --popover-foreground: #fafafa;
-    --primary: #fafafa;
-    --primary-foreground: #18181b;
+    /* The deck is light-only. These lift the same hue until it carries
+       enough contrast on a dark canvas — #4a3cae itself is unreadable
+       there — so dark mode stays recognisably the same brand. */
+    --primary: #8578e8;
+    --primary-foreground: #14121f;
     --secondary: #27272a;
     --secondary-foreground: #fafafa;
     --muted: #27272a;
     --muted-foreground: #a1a1aa;
-    --accent: #27272a;
-    --accent-foreground: #fafafa;
+    --accent: #241f3d;
+    --accent-foreground: #c9c0ff;
     --border: #27272a;
     --input: #27272a;
-    --ring: #52525b;
+    --ring: #8578e8;
   }
 }
 
