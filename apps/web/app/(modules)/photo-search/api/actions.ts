@@ -3,9 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db, photoSearches, photoReferences } from "@kostas/database";
-import { confirmPhotoMatchSchema, createPhotoReferenceSchema } from "@kostas/shared/schemas";
+import {
+  confirmPhotoMatchSchema,
+  createPhotoReferenceSchema,
+} from "@kostas/shared/schemas";
 import { AuthError } from "@kostas/auth";
 import { authProvider } from "@/lib/auth";
+import { requireWriteAccess } from "@/lib/action-auth";
 
 export interface ActionResult {
   success: boolean;
@@ -14,7 +18,15 @@ export interface ActionResult {
 }
 
 /** Manual-review step: persists the user's confirm/reject decision for a photo search's suggested match. */
-export async function confirmPhotoMatchAction(input: unknown): Promise<ActionResult> {
+export async function confirmPhotoMatchAction(
+  input: unknown,
+): Promise<ActionResult> {
+  // Same roles as createPhotoReferenceAction below: confirming a match is
+  // what promotes a search into the reference catalog, so the two decisions
+  // belong to the same people.
+  const denied = await requireWriteAccess(["admin", "manager", "designer"]);
+  if (denied) return denied;
+
   const parsed = confirmPhotoMatchSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, fieldErrors: parsed.error.flatten().fieldErrors };
@@ -35,7 +47,9 @@ export async function confirmPhotoMatchAction(input: unknown): Promise<ActionRes
 }
 
 /** Adds a new labeled reference photo to the catalog (e.g. from a confirmed search, or uploaded directly). */
-export async function createPhotoReferenceAction(input: unknown): Promise<ActionResult> {
+export async function createPhotoReferenceAction(
+  input: unknown,
+): Promise<ActionResult> {
   try {
     await authProvider.requireRole(["admin", "manager", "designer"]);
   } catch (err) {

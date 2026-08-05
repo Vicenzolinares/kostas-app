@@ -10,6 +10,7 @@ import {
   type AuthProvider,
   type Session,
   type SignInParams,
+  type SignInWithPinParams,
   type SignUpParams,
 } from "../types";
 
@@ -89,6 +90,34 @@ export class LocalAuthProvider implements AuthProvider {
     if (!valid) {
       throw new AuthError("Invalid email or password.", "invalid_credentials");
     }
+    return this.establishSession({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role as UserRole,
+    });
+  }
+
+  /**
+   * Kiosk sign-in: the shop-floor staff pick their name off a grid and
+   * enter a 4-digit PIN (mockup deck p17).
+   *
+   * The failure message never distinguishes "no PIN set on this account"
+   * from "wrong PIN" — the account grid is public on a wall tablet, so a
+   * specific error would tell anyone walking past which names are worth
+   * guessing at. Accounts without a `pinHash` simply can't sign in this
+   * way; they use the email form like any office user.
+   */
+  async signInWithPin({ userId, pin }: SignInWithPinParams): Promise<Session> {
+    const user = await this.options.db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+    const invalid = new AuthError("Incorrect PIN.", "invalid_credentials");
+    if (!user?.pinHash) throw invalid;
+
+    const valid = await bcrypt.compare(pin, user.pinHash);
+    if (!valid) throw invalid;
+
     return this.establishSession({
       id: user.id,
       name: user.name,

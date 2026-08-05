@@ -9,8 +9,7 @@ import {
   createPaymentIntentSchema,
 } from "@kostas/shared/schemas";
 import { PaymentConfigurationError } from "@kostas/shared/payments";
-import { AuthError } from "@kostas/auth";
-import { authProvider } from "@/lib/auth";
+import { requireWriteAccess } from "@/lib/action-auth";
 import { paymentProvider } from "@/lib/payments";
 import {
   paymentsDemoMode,
@@ -28,16 +27,6 @@ export interface ActionResult {
 
 const WRITE_ROLES = ["admin", "manager"] as const;
 
-async function requireWriteAccess(): Promise<ActionResult | null> {
-  try {
-    await authProvider.requireRole([...WRITE_ROLES]);
-    return null;
-  } catch (err) {
-    if (err instanceof AuthError) return { success: false, error: err.message };
-    return { success: false, error: "Something went wrong." };
-  }
-}
-
 function calculateTotals(
   lineItems: { quantity: number; unitPrice: number }[],
   taxRate: number,
@@ -53,7 +42,7 @@ function calculateTotals(
 export async function createInvoiceAction(
   input: unknown,
 ): Promise<ActionResult> {
-  const denied = await requireWriteAccess();
+  const denied = await requireWriteAccess(WRITE_ROLES);
   if (denied) return denied;
 
   const parsed = createInvoiceSchema.safeParse(input);
@@ -112,7 +101,7 @@ export async function createInvoiceAction(
 export async function updateInvoiceStatusAction(
   input: unknown,
 ): Promise<ActionResult> {
-  const denied = await requireWriteAccess();
+  const denied = await requireWriteAccess(WRITE_ROLES);
   if (denied) return denied;
 
   const parsed = updateInvoiceStatusSchema.safeParse(input);
@@ -139,6 +128,12 @@ export async function updateInvoiceStatusAction(
 export async function createPaymentIntentAction(
   input: unknown,
 ): Promise<ActionResult> {
+  // Was the one write in this module without a gate: with Stripe configured
+  // this creates a real PaymentIntent and a pending transaction row, so it
+  // needs the same restriction as every other finance mutation.
+  const denied = await requireWriteAccess(WRITE_ROLES);
+  if (denied) return denied;
+
   const parsed = createPaymentIntentSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, fieldErrors: parsed.error.flatten().fieldErrors };
@@ -186,7 +181,7 @@ export async function createPaymentIntentAction(
 export async function recordDemoPaymentAction(
   input: unknown,
 ): Promise<ActionResult> {
-  const authError = await requireWriteAccess();
+  const authError = await requireWriteAccess(WRITE_ROLES);
   if (authError) return authError;
 
   if (!paymentsDemoMode) {

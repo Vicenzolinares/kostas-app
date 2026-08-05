@@ -86,6 +86,67 @@ const DICTIONARY = {
   updated: ["Updated", "Actualizado"],
   exitFullscreen: ["Exit Fullscreen", "Salir de Pantalla Completa"],
   fullscreen: ["Fullscreen", "Pantalla Completa"],
+  // --- Employee portal (deck p17) --------------------------------------
+  employeeLogin: ["Employee Login", "Inicio de Sesión de Empleado"],
+  otherEmployee: ["Other Employee", "Otro Empleado"],
+  forgotPin: ["Forgot PIN?", "¿Olvidaste tu PIN?"],
+  needHelp: ["Need help?", "¿Necesitas ayuda?"],
+  askSupervisorForPin: [
+    "Ask your supervisor to reset it for you.",
+    "Pide a tu supervisor que lo restablezca.",
+  ],
+  enterYourPin: ["Enter your PIN", "Ingresa tu PIN"],
+  welcomeBack: ["Welcome, {name}!", "¡Bienvenido, {name}!"],
+  incorrectPin: ["Incorrect PIN.", "PIN incorrecto."],
+  back: ["Back", "Atrás"],
+  goodMorning: ["Good morning, {name}!", "¡Buenos días, {name}!"],
+  goodAfternoon: ["Good afternoon, {name}!", "¡Buenas tardes, {name}!"],
+  goodEvening: ["Good evening, {name}!", "¡Buenas noches, {name}!"],
+  todaysTasksSubtitle: [
+    "Here are your tasks for today.",
+    "Aquí están tus tareas de hoy.",
+  ],
+  hoursThisWeek: ["Hours This Week", "Horas Esta Semana"],
+  hoursToday: ["Hours Today", "Horas Hoy"],
+  overtime: ["Overtime", "Horas Extras"],
+  totalProjects: ["Total Projects", "Proyectos Totales"],
+  completedCount: ["Completed", "Completados"],
+  ofHours: ["of {total} hrs", "de {total} hrs"],
+  thisMonth: ["This Month", "Este Mes"],
+  activeNow: ["Active", "Activos"],
+  activeTimer: ["Active Timer", "Temporizador Activo"],
+  inProgress: ["In Progress", "En Curso"],
+  notClockedIn: ["Not clocked in", "Sin registrar entrada"],
+  workingOn: ["Working on", "Trabajando en"],
+  clockIn: ["Clock In", "Registrar Entrada"],
+  clockOut: ["Clock Out", "Salir"],
+  startBreak: ["Start Break", "Iniciar Pausa"],
+  myTasks: ["My Tasks", "Mis Tareas"],
+  noTasksAssigned: ["Nothing assigned to you.", "No tienes tareas asignadas."],
+  todaysSummary: ["Today's Summary", "Resumen de Hoy"],
+  totalHoursToday: ["Total Hours Today", "Horas Totales Hoy"],
+  recentActivity: ["Recent Activity", "Actividad Reciente"],
+  workOrders: ["Work Orders", "Órdenes de Trabajo"],
+  hoursByTask: ["Hours by Task", "Horas por Tarea"],
+  thisWeek: ["This Week", "Esta Semana"],
+  totalHrs: ["Total hrs", "Horas totales"],
+  employeeOverview: ["Employee Overview", "Resumen de Empleados"],
+  project: ["Project", "Proyecto"],
+  item: ["Item", "Artículo"],
+  customer: ["Customer", "Cliente"],
+  dueDate: ["Due Date", "Fecha Entrega"],
+  assignedTo: ["Assigned To", "Asignado a"],
+  status: ["Status", "Estado"],
+  totalHours: ["Total Hours", "Horas Totales"],
+  clockedIn: ["Clocked in", "Entrada registrada"],
+  clockedOut: ["Clocked out", "Salida registrada"],
+  noteLogged: ["Note added", "Nota agregada"],
+  photoUploaded: ["Photo uploaded", "Foto subida"],
+  signOut: ["Sign Out", "Cerrar Sesión"],
+  offlineQueued: [
+    "Offline — saved on this device, will sync.",
+    "Sin conexión — guardado aquí, se sincronizará.",
+  ],
 } satisfies Record<string, readonly [string, string]>;
 
 export type MessageKey = keyof typeof DICTIONARY;
@@ -147,6 +208,25 @@ export function notificationLines(
       .replace("{project}", values.project)
       .replace("{room}", DEPARTMENT_NAMES[values.departmentKey][index]);
   });
+}
+
+/**
+ * A label with `{placeholder}` slots filled in, substituted per language so
+ * "both" mode doesn't interpolate into English twice. Used for the portal's
+ * greeting and hour totals.
+ */
+export function labelWith(
+  key: MessageKey,
+  values: Record<string, string | number>,
+  lang: Language,
+): string {
+  const fill = (text: string) =>
+    Object.entries(values).reduce(
+      (out, [name, value]) => out.replaceAll(`{${name}}`, String(value)),
+      text,
+    );
+  const pair = DICTIONARY[key];
+  return render([fill(pair[0]), fill(pair[1])], lang);
 }
 
 /** Picks the right side of a per-row bilingual string (e.g. a task name). */

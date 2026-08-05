@@ -42,7 +42,13 @@ export function ProjectsByStatusChart({ data }: ProjectsByStatusChartProps) {
             />
             <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
             <Tooltip />
-            <Bar dataKey="count" fill="#18181b" radius={[4, 4, 0, 0]} />
+            {/* The other three charts already read the brand token; this
+                one was still hardcoded to the old zinc primary. */}
+            <Bar
+              dataKey="count"
+              fill="var(--color-primary, #4a3cae)"
+              radius={[4, 4, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

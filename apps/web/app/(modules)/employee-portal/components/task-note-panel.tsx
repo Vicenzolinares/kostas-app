@@ -11,8 +11,14 @@ import {
 } from "@kostas/ui";
 import { useOfflineQueueStore } from "../store/offline-queue";
 import { CameraCapture } from "./camera-capture";
+import { label, type Language } from "@/lib/i18n";
 
-export function TaskNotePanel() {
+/**
+ * Notes and photos from the floor. Bilingual like the rest of the portal,
+ * and still routed through the offline queue rather than a Server Action —
+ * a photo taken in the back of the shop is exactly where signal drops.
+ */
+export function TaskNotePanel({ lang }: { lang: Language }) {
   const enqueue = useOfflineQueueStore((s) => s.enqueue);
   const [note, setNote] = useState("");
   const [showCamera, setShowCamera] = useState(false);
@@ -37,11 +43,11 @@ export function TaskNotePanel() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Task note / photo</CardTitle>
+        <CardTitle className="text-base">{label("noteLogged", lang)}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <Textarea
-          placeholder="What did you work on?"
+          placeholder={label("workingOn", lang)}
           rows={3}
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -54,7 +60,7 @@ export function TaskNotePanel() {
             variant="outline"
             onClick={() => setShowCamera(true)}
           >
-            {photo ? "Retake photo" : "Add photo"}
+            {label("photoUploaded", lang)}
           </Button>
         )}
         <Button
@@ -62,11 +68,11 @@ export function TaskNotePanel() {
           onClick={handleSubmit}
           disabled={!note.trim() && !photo}
         >
-          Queue update
+          {label("noteLogged", lang)}
         </Button>
         {submitted ? (
           <p className="text-xs text-muted-foreground">
-            Queued — will sync automatically.
+            {label("offlineQueued", lang)}
           </p>
         ) : null}
       </CardContent>

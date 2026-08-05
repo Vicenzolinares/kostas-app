@@ -14,9 +14,11 @@ export function NavLink({ item }: { item: NavItem }) {
       href={item.href}
       className={cn(
         "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+        // The deck marks the active item with a soft lavender fill and
+        // brand-coloured label, not a solid primary block.
         active
-          ? "bg-primary text-primary-foreground"
-          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+          ? "bg-accent text-accent-foreground"
+          : "text-muted-foreground hover:bg-accent/60 hover:text-accent-foreground",
       )}
     >
       {item.label}

@@ -9,7 +9,16 @@ const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME ?? "kostas_session";
 // auth — is unavailable). /serwist: serves the service worker script
 // itself (app/serwist/[path]/route.ts), which the browser fetches before
 // any page/cookie context applies.
-const PUBLIC_PATHS = ["/login", "/signup", "/offline", "/serwist"];
+// /employee-login: the shop-floor kiosk's own sign-in screen (deck p17).
+// It has to render before there's a session, same as /login — it lists
+// name and role for PIN-enabled accounts only, never email addresses.
+const PUBLIC_PATHS = [
+  "/login",
+  "/signup",
+  "/offline",
+  "/serwist",
+  "/employee-login",
+];
 
 // Role allow-lists per route prefix, checked in declaration order (first
 // match wins). Paths not listed here are auth-only (any signed-in role).
@@ -81,5 +90,12 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|login|signup).*)"],
+  // The trailing `\\..*` exclusion covers files served straight out of
+  // /public. Without it the guard runs on asset requests too, so an image
+  // on a page that renders before sign-in (the kiosk's logo on
+  // /employee-login) gets redirected to /login and silently fails to load —
+  // which is exactly how it was found.
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|login|signup|.*\\..*).*)",
+  ],
 };

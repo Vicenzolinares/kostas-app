@@ -8,15 +8,22 @@ import {
   reorderItemsSchema,
   type CreateItemInput,
 } from "@kostas/shared/schemas";
+import { requireWriteAccess } from "@/lib/action-auth";
 
 export interface ActionResult {
   success: boolean;
   error?: string;
 }
 
+// Same warehouse rationale as fabric-inventory and hardware-inventory.
+const WRITE_ROLES = ["admin", "manager", "shop_floor"] as const;
+
 export async function createItemAction(
   input: CreateItemInput,
 ): Promise<ActionResult> {
+  const denied = await requireWriteAccess(WRITE_ROLES);
+  if (denied) return denied;
+
   const parsed = createItemSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -40,6 +47,9 @@ export async function updateItemQuantityAction(
   id: string,
   quantity: number,
 ): Promise<ActionResult> {
+  const denied = await requireWriteAccess(WRITE_ROLES);
+  if (denied) return denied;
+
   if (quantity < 0)
     return { success: false, error: "Quantity cannot be negative." };
   await db
@@ -53,6 +63,9 @@ export async function updateItemQuantityAction(
 export async function reorderItemsAction(
   input: unknown,
 ): Promise<ActionResult> {
+  const denied = await requireWriteAccess(WRITE_ROLES);
+  if (denied) return denied;
+
   const parsed = reorderItemsSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: "Invalid reorder payload." };
@@ -72,6 +85,9 @@ export async function reorderItemsAction(
 }
 
 export async function deleteItemAction(id: string): Promise<ActionResult> {
+  const denied = await requireWriteAccess(WRITE_ROLES);
+  if (denied) return denied;
+
   await db.delete(itemsInventory).where(eq(itemsInventory.id, id));
   revalidatePath("/items-inventory");
   return { success: true };
