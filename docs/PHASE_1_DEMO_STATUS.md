@@ -43,6 +43,14 @@ designers and three shop-floor users — all with the same password, so
 role-specific views can be demoed. See the users table in
 `packages/database/src/scripts/seed.ts`.
 
+### Kiosk login (Employee Portal)
+
+The shop-floor tablet has its own sign-in at
+**http://localhost:3000/employee-login** — pick a name off the grid, then
+enter a 4-digit PIN. All three shop-floor accounts (Maria, Tom, Andre) use
+PIN **`1234`**. Office accounts have no PIN and never appear on the grid;
+they sign in with email at `/login` as before.
+
 ### Reset and reseed the database
 
 `pnpm db:seed` is **destructive and idempotent**: it truncates every demo
@@ -92,7 +100,7 @@ shows something coherent.
 | Photo references     | 10    | real generated PNG swatches on disk                                    |
 | Photo searches       | 3     | matched, confirmed, and no-match states                                |
 | Design submissions   | 6     | across the full XState approval workflow                               |
-| Employee actions     | 10    | clock in/out, task notes, photo upload                                 |
+| Employee actions     | 13    | closed shifts yesterday + an open one today, notes, photo upload       |
 
 ---
 
@@ -115,8 +123,8 @@ All 18 modules. No credentials needed for any of it.
 | 11  | Emails                 | Inbox, compose, reply, forward — **demo mode, saved locally**            |
 | 12  | AI Photo Search        | Upload, Sharp optimization, storage — **demo matching**                  |
 | 13  | Department Status      | Live board via `packages/realtime` (polling)                             |
-| 14  | Reports                | Real aggregations; revenue/labour-cost still labelled mock               |
-| 15  | Employee Portal        | Mobile-first PWA, offline queue (IndexedDB), camera capture              |
+| 14  | Reports                | Real aggregations incl. revenue; labour-cost still labelled mock         |
+| 15  | Employee Portal        | PIN kiosk login, bilingual EN/ES, live timer, offline queue, camera      |
 | 16  | Digital Shop Board     | Kiosk/fullscreen mode, reuses the realtime layer                         |
 | 17  | Universal Project View | Responsive accordion / card slider                                       |
 | 18  | Designer Portal        | XState approval workflow, TipTap comments                                |
@@ -190,10 +198,16 @@ message, charges a card, or calls a model.
 
 ### Still genuinely mocked data
 
-- **Reports (module 14)**: revenue and labour-cost reports are
-  clearly-labelled mock data pending real finance/payroll volume. The
-  project pipeline, production throughput, fabric usage and inventory-level
-  reports are real aggregation queries against the seeded data.
+- **Reports (module 14)**: the labour-cost report is the last
+  clearly-labelled mock, pending payroll data no table holds yet. Every
+  other report — project pipeline, production throughput, fabric usage,
+  inventory levels and revenue — is a real aggregation query against the
+  seeded data.
+- **Revenue** now reads the finance tables directly (succeeded payments
+  net of refunds, the same definition as the Finance module's chart, so
+  the two can't disagree). Demo payments are real rows and do count, but
+  each month reports how much of its total came from them — while Stripe
+  is unconfigured that is every dollar, and the report says so.
 
 ---
 
@@ -242,8 +256,23 @@ free Community/standard versions are in use and fully functional.
 ## Visual fidelity gaps
 
 Functionally complete does not yet mean visually matched to the mockup
-deck. Known differences — tracked separately from this document — include
-the fixed information-dense dashboard layout, illustrated measurement
-sketches with numbered callouts, the Employee Portal PIN pad and photo
-grid, the Shop Board's three-column colour-coded layout, the purple/indigo
-accent colour, and the Kostas logo monogram.
+deck (`Kostas Upholstery App (4).pdf` at the repo root).
+
+Done so far: the Shop Board's three-column colour-coded layout, the
+external Designer Portal, and the app-wide brand pass — the monogram logo,
+the deck's indigo `--primary` (`#4a3cae`, sampled from the deck rather than
+guessed), the deck's sidebar order, and the header's search / "+ New" /
+notification / user-badge chrome.
+
+Also done: the Employee Portal — kiosk PIN login with the staff grid, the
+persistent EN / ES / EN+ES toggle, and the desktop dashboard (stat row,
+running timer, task checklists, today's summary, activity, work orders,
+hours-by-task donut, employee overview).
+
+Still open: the fixed information-dense dashboard layout, illustrated
+measurement sketches with numbered callouts, the Employee Portal's
+dedicated mobile screens (the dashboard is responsive, but the deck's
+separate time-tracking / schedule / message-centre / photos screens with a
+bottom tab bar aren't built), the Work Orders live letterhead preview, the
+Photo Search confidence card, fabric colour swatches in the inventory
+grids, and the office-side Designer Portal view.

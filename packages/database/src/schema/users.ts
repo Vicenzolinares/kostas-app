@@ -14,9 +14,18 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  // Shop-floor staff sign in at a shared kiosk by tapping their name and
+  // entering a 4-digit PIN (mockup deck p17) rather than typing an email
+  // and password on a wall-mounted tablet. Hashed like any other secret,
+  // and null for office accounts that only ever use the email form.
+  pinHash: text("pin_hash"),
   role: userRoleEnum("role").notNull().default("employee"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 export type User = typeof users.$inferSelect;
@@ -28,7 +37,9 @@ export const sessions = pgTable("sessions", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 export type Session = typeof sessions.$inferSelect;

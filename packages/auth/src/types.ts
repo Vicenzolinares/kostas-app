@@ -17,6 +17,12 @@ export interface SignInParams {
   password: string;
 }
 
+export interface SignInWithPinParams {
+  /** Chosen from the kiosk's employee grid, so the PIN alone is never the whole credential. */
+  userId: string;
+  pin: string;
+}
+
 export interface SignUpParams {
   name: string;
   email: string;
@@ -33,6 +39,8 @@ export interface SignUpParams {
  */
 export interface AuthProvider {
   signIn(params: SignInParams): Promise<Session>;
+  /** Kiosk sign-in for shop-floor staff: pick a name, enter a 4-digit PIN. */
+  signInWithPin(params: SignInWithPinParams): Promise<Session>;
   signUp(params: SignUpParams): Promise<Session>;
   signOut(): Promise<void>;
   getSession(): Promise<Session | null>;
@@ -43,7 +51,8 @@ export interface AuthProvider {
 export class AuthError extends Error {
   constructor(
     message: string,
-    public readonly code: "invalid_credentials" | "email_taken" | "unauthenticated" | "forbidden",
+    public readonly code:
+      "invalid_credentials" | "email_taken" | "unauthenticated" | "forbidden",
   ) {
     super(message);
     this.name = "AuthError";

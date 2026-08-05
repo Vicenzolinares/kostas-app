@@ -118,6 +118,11 @@ async function main() {
   // One shared hash: every demo account uses `password123`, and bcryptjs is
   // slow enough that hashing per-user is a noticeable delay for no benefit.
   const passwordHash = await bcrypt.hash("password123", 10);
+  // Kiosk PINs for the shop-floor accounts (mockup deck p17). Same shared
+  // value for the same reason as the password above; only the accounts that
+  // actually stand at the shop tablet get one, so the office accounts keep
+  // a null pin_hash and can't be signed into from the kiosk grid at all.
+  const pinHash = await bcrypt.hash("1234", 10);
 
   const [victoria, kostas, maria, tom, elena, priya, andre, sofia, amber] =
     await db
@@ -137,12 +142,14 @@ async function main() {
         },
         {
           name: "Maria Gallardo",
+          pinHash,
           email: "maria@kostas.local",
           passwordHash,
           role: "shop_floor",
         },
         {
           name: "Tom Rivera",
+          pinHash,
           email: "tom@kostas.local",
           passwordHash,
           role: "shop_floor",
@@ -165,6 +172,7 @@ async function main() {
         },
         {
           name: "Andre Boateng",
+          pinHash,
           email: "andre@kostas.local",
           passwordHash,
           role: "shop_floor",
@@ -2544,90 +2552,126 @@ async function main() {
   );
 
   // --- employee portal activity -----------------------------------------
+  // Deliberately relative to *now* rather than to a wall-clock hour. The
+  // portal derives every hours figure by pairing these clock events, so a
+  // fixed `at(0, 7)` seeded before 7am put today's clock-in in the future
+  // and the whole dashboard read zero. Yesterday is a closed pair; today is
+  // an open one, which is what makes the running timer show real elapsed
+  // time whenever the demo is seeded.
+  const hoursAgo = (h: number): Date =>
+    new Date(Date.now() - h * 60 * 60 * 1000);
+  const yesterdayShift = (person: string) => 24 + (person === "andre" ? 7 : 8);
+
   await db.insert(employeeActions).values([
+    // Yesterday: a full closed shift each, so "this week" has real hours.
     {
       clientId: "demo-act-0001",
       userId: maria!.id,
       projectId: harborview!.id,
       type: "clock_in",
       payload: { source: "kiosk" },
-      occurredAt: at(0, 7),
+      occurredAt: hoursAgo(yesterdayShift("maria") + 8),
     },
     {
       clientId: "demo-act-0002",
-      userId: tom!.id,
-      projectId: chen!.id,
-      type: "clock_in",
-      payload: { source: "kiosk" },
-      occurredAt: at(0, 7),
-    },
-    {
-      clientId: "demo-act-0003",
-      userId: andre!.id,
-      projectId: novak!.id,
-      type: "clock_in",
-      payload: { source: "mobile" },
-      occurredAt: at(0, 8),
-    },
-    {
-      clientId: "demo-act-0004",
-      userId: tom!.id,
-      projectId: chen!.id,
-      type: "task_note",
-      payload: { note: "Seat cushion boxing done on 4 of 6 modules." },
-      occurredAt: at(0, 11),
-    },
-    {
-      clientId: "demo-act-0005",
-      userId: andre!.id,
-      projectId: harborview!.id,
-      type: "task_note",
-      payload: { note: "Frame shop blocked — corner blocks short by 3." },
-      occurredAt: at(0, 12),
-    },
-    {
-      clientId: "demo-act-0006",
       userId: maria!.id,
       projectId: harborview!.id,
       type: "photo_upload",
       payload: { caption: "Batch 2 cut layout" },
       photoKey: "demo/photos/fabric-herringbone-wool.png",
-      occurredAt: at(-1, 14),
+      occurredAt: hoursAgo(yesterdayShift("maria") + 3),
     },
     {
-      clientId: "demo-act-0007",
+      clientId: "demo-act-0003",
       userId: maria!.id,
       projectId: harborview!.id,
       type: "clock_out",
       payload: { source: "kiosk" },
-      occurredAt: at(-1, 16),
+      occurredAt: hoursAgo(yesterdayShift("maria")),
     },
     {
-      clientId: "demo-act-0008",
+      clientId: "demo-act-0004",
+      userId: tom!.id,
+      projectId: delgado!.id,
+      type: "clock_in",
+      payload: { source: "kiosk" },
+      occurredAt: hoursAgo(yesterdayShift("tom") + 8),
+    },
+    {
+      clientId: "demo-act-0005",
       userId: tom!.id,
       projectId: delgado!.id,
       type: "task_note",
       payload: { note: "All 8 pads centred on motif — ready for QC." },
-      occurredAt: at(-1, 15),
+      occurredAt: hoursAgo(yesterdayShift("tom") + 2),
     },
     {
-      clientId: "demo-act-0009",
+      clientId: "demo-act-0006",
       userId: tom!.id,
       projectId: delgado!.id,
       type: "clock_out",
       payload: { source: "kiosk" },
-      occurredAt: at(-1, 16),
+      occurredAt: hoursAgo(yesterdayShift("tom")),
     },
     {
-      clientId: "demo-act-0010",
+      clientId: "demo-act-0007",
+      userId: andre!.id,
+      projectId: novak!.id,
+      type: "clock_in",
+      payload: { source: "mobile" },
+      occurredAt: hoursAgo(yesterdayShift("andre") + 7),
+    },
+    {
+      clientId: "demo-act-0008",
       userId: andre!.id,
       projectId: novak!.id,
       type: "clock_out",
       payload: { source: "mobile" },
-      occurredAt: at(-1, 17),
+      occurredAt: hoursAgo(yesterdayShift("andre")),
+    },
+    // Today: still on the clock, so the portal's timer is genuinely running.
+    {
+      clientId: "demo-act-0009",
+      userId: maria!.id,
+      projectId: harborview!.id,
+      type: "clock_in",
+      payload: { source: "kiosk" },
+      occurredAt: hoursAgo(3),
+    },
+    {
+      clientId: "demo-act-0010",
+      userId: tom!.id,
+      projectId: chen!.id,
+      type: "clock_in",
+      payload: { source: "kiosk" },
+      occurredAt: hoursAgo(2.5),
+    },
+    {
+      clientId: "demo-act-0011",
+      userId: tom!.id,
+      projectId: chen!.id,
+      type: "task_note",
+      payload: { note: "Seat cushion boxing done on 4 of 6 modules." },
+      occurredAt: hoursAgo(1),
+    },
+    {
+      clientId: "demo-act-0012",
+      userId: andre!.id,
+      projectId: novak!.id,
+      type: "clock_in",
+      payload: { source: "mobile" },
+      occurredAt: hoursAgo(2),
+    },
+    {
+      clientId: "demo-act-0013",
+      userId: andre!.id,
+      projectId: harborview!.id,
+      type: "task_note",
+      payload: { note: "Frame shop blocked — corner blocks short by 3." },
+      occurredAt: hoursAgo(0.5),
     },
   ]);
-  console.log("  employee actions: 10");
+  console.log("  employee actions: 13");
 
   console.log(
     "\nSeed complete — local demo data only, no external services contacted.",

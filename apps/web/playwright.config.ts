@@ -16,7 +16,11 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `next start -p ${PORT}`,
+    // Same `dotenv -e ../../.env` wrapper the dev/start scripts use. A bare
+    // `next start` here inherits none of the monorepo-root env, so every
+    // spec that signs in died on "AUTH_SECRET is not set" — invisible when
+    // the suite only ever ran in CI, where the vars come from the workflow.
+    command: `pnpm exec dotenv -e ../../.env -- next start -p ${PORT}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
