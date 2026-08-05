@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db, clientMeasurements } from "@kostas/database";
 import {
   createClientMeasurementSchema,
+  updateMeasurementSheetsSchema,
   type CreateClientMeasurementInput,
 } from "@kostas/shared/schemas";
 import { LocalStorageProvider } from "@kostas/shared/storage";
@@ -48,6 +49,37 @@ export async function createMeasurementAction(
     notes: parsed.data.notes || null,
     canvasData: parsed.data.canvasData,
   });
+
+  revalidatePath("/client-measurements");
+  return { success: true };
+}
+
+/**
+ * Persists an illustrated sheet's values (deck p4).
+ *
+ * Only the keys and values are written — the sheet's labels, notes and
+ * callout positions are defined in the app, so nothing here has to agree
+ * with the UI beyond the key. Values arrive already normalised to inches by
+ * the client's unit toggle.
+ */
+export async function saveMeasurementSheetsAction(
+  input: unknown,
+): Promise<ActionResult> {
+  const denied = await requireWriteAccess(WRITE_ROLES);
+  if (denied) return denied;
+
+  const parsed = updateMeasurementSheetsSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message ?? "Invalid measurements.",
+    };
+  }
+
+  await db
+    .update(clientMeasurements)
+    .set({ sheets: parsed.data.sheets, updatedAt: new Date() })
+    .where(eq(clientMeasurements.id, parsed.data.id));
 
   revalidatePath("/client-measurements");
   return { success: true };

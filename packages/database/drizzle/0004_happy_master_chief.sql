@@ -1,0 +1,1 @@
+ALTER TABLE "client_measurements" ADD COLUMN "sheets" jsonb DEFAULT '[]'::jsonb NOT NULL;
