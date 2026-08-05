@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db, projects } from "@kostas/database";
-import { createProjectSchema, updateProjectSchema } from "@kostas/shared/schemas";
+import {
+  createProjectSchema,
+  updateProjectSchema,
+} from "@kostas/shared/schemas";
+import { requireWriteAccess } from "@/lib/action-auth";
 
 export interface ActionResult {
   success: boolean;
@@ -11,10 +15,18 @@ export interface ActionResult {
   fieldErrors?: Record<string, string[]>;
 }
 
+// Projects are office work: sales owns the client relationship and creates
+// the job, managers and admins oversee it. Shop floor reads projects via
+// work orders and the department board, and never edits them here.
+const WRITE_ROLES = ["admin", "manager", "sales"] as const;
+
 export async function createProjectAction(
   _prevState: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
+  const denied = await requireWriteAccess(WRITE_ROLES);
+  if (denied) return denied;
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = createProjectSchema.safeParse(raw);
 
@@ -22,7 +34,8 @@ export async function createProjectAction(
     return { success: false, fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const { dueDate, budget, clientEmail, clientPhone, description, ...rest } = parsed.data;
+  const { dueDate, budget, clientEmail, clientPhone, description, ...rest } =
+    parsed.data;
 
   await db.insert(projects).values({
     ...rest,
@@ -41,6 +54,9 @@ export async function updateProjectAction(
   _prevState: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
+  const denied = await requireWriteAccess(WRITE_ROLES);
+  if (denied) return denied;
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = updateProjectSchema.safeParse(raw);
 
@@ -48,17 +64,33 @@ export async function updateProjectAction(
     return { success: false, fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const { id, dueDate, budget, clientEmail, clientPhone, description, ...rest } = parsed.data;
+  const {
+    id,
+    dueDate,
+    budget,
+    clientEmail,
+    clientPhone,
+    description,
+    ...rest
+  } = parsed.data;
 
   await db
     .update(projects)
     .set({
       ...rest,
       ...(dueDate !== undefined ? { dueDate } : {}),
-      ...(budget !== undefined ? { budget: budget != null ? String(budget) : null } : {}),
-      ...(clientEmail !== undefined ? { clientEmail: clientEmail || null } : {}),
-      ...(clientPhone !== undefined ? { clientPhone: clientPhone || null } : {}),
-      ...(description !== undefined ? { description: description || null } : {}),
+      ...(budget !== undefined
+        ? { budget: budget != null ? String(budget) : null }
+        : {}),
+      ...(clientEmail !== undefined
+        ? { clientEmail: clientEmail || null }
+        : {}),
+      ...(clientPhone !== undefined
+        ? { clientPhone: clientPhone || null }
+        : {}),
+      ...(description !== undefined
+        ? { description: description || null }
+        : {}),
       updatedAt: new Date(),
     })
     .where(eq(projects.id, id));
@@ -69,6 +101,9 @@ export async function updateProjectAction(
 }
 
 export async function deleteProjectAction(id: string): Promise<ActionResult> {
+  const denied = await requireWriteAccess(WRITE_ROLES);
+  if (denied) return denied;
+
   await db.delete(projects).where(eq(projects.id, id));
   revalidatePath("/projects");
   return { success: true };

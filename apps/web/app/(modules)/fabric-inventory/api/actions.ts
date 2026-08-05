@@ -7,15 +7,23 @@ import {
   createFabricSchema,
   type CreateFabricInput,
 } from "@kostas/shared/schemas";
+import { requireWriteAccess } from "@/lib/action-auth";
 
 export interface ActionResult {
   success: boolean;
   error?: string;
 }
 
+// Matches hardware-inventory: stock lives in the warehouse, so shop floor
+// adjusts it alongside managers and admins.
+const WRITE_ROLES = ["admin", "manager", "shop_floor"] as const;
+
 export async function createFabricAction(
   input: CreateFabricInput,
 ): Promise<ActionResult> {
+  const denied = await requireWriteAccess(WRITE_ROLES);
+  if (denied) return denied;
+
   const parsed = createFabricSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -56,6 +64,9 @@ export async function updateFabricStockAction(
   id: string,
   yardsInStock: number,
 ): Promise<ActionResult> {
+  const denied = await requireWriteAccess(WRITE_ROLES);
+  if (denied) return denied;
+
   if (yardsInStock < 0)
     return { success: false, error: "Stock cannot be negative." };
   await db
@@ -67,6 +78,9 @@ export async function updateFabricStockAction(
 }
 
 export async function deleteFabricAction(id: string): Promise<ActionResult> {
+  const denied = await requireWriteAccess(WRITE_ROLES);
+  if (denied) return denied;
+
   await db.delete(fabricInventory).where(eq(fabricInventory.id, id));
   revalidatePath("/fabric-inventory");
   return { success: true };

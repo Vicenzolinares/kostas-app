@@ -9,6 +9,7 @@ import {
 } from "@kostas/shared/schemas";
 import { LocalStorageProvider } from "@kostas/shared/storage";
 import path from "node:path";
+import { requireWriteAccess } from "@/lib/action-auth";
 
 const storage = new LocalStorageProvider({
   rootDir: process.env.STORAGE_ROOT_DIR
@@ -22,9 +23,17 @@ export interface ActionResult {
   error?: string;
 }
 
+// Measurements are taken in the client's home by whoever is on site —
+// sales on a first visit, a designer on a spec revision — and corrected by
+// managers afterwards.
+const WRITE_ROLES = ["admin", "manager", "sales", "designer"] as const;
+
 export async function createMeasurementAction(
   input: CreateClientMeasurementInput,
 ): Promise<ActionResult> {
+  const denied = await requireWriteAccess(WRITE_ROLES);
+  if (denied) return denied;
+
   const parsed = createClientMeasurementSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -48,6 +57,9 @@ export async function uploadReferencePhotoAction(
   measurementId: string,
   formData: FormData,
 ): Promise<ActionResult> {
+  const denied = await requireWriteAccess(WRITE_ROLES);
+  if (denied) return denied;
+
   const file = formData.get("file");
   if (!(file instanceof File)) {
     return { success: false, error: "No file provided." };
@@ -72,6 +84,9 @@ export async function uploadReferencePhotoAction(
 export async function deleteMeasurementAction(
   id: string,
 ): Promise<ActionResult> {
+  const denied = await requireWriteAccess(WRITE_ROLES);
+  if (denied) return denied;
+
   await db.delete(clientMeasurements).where(eq(clientMeasurements.id, id));
   revalidatePath("/client-measurements");
   return { success: true };

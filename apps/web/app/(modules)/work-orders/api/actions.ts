@@ -4,9 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db, workOrders, workOrderFabrics } from "@kostas/database";
-import { createWorkOrderSchema, updateWorkOrderStatusSchema } from "@kostas/shared/schemas";
-import { AuthError } from "@kostas/auth";
+import {
+  createWorkOrderSchema,
+  updateWorkOrderStatusSchema,
+} from "@kostas/shared/schemas";
 import { authProvider } from "@/lib/auth";
+import { requireWriteAccess } from "@/lib/action-auth";
 import { nextOrderNumber } from "./queries";
 
 export interface ActionResult {
@@ -18,16 +21,6 @@ export interface ActionResult {
 
 const WRITE_ROLES = ["admin", "manager", "sales", "designer"] as const;
 
-async function requireWriteAccess(): Promise<ActionResult | null> {
-  try {
-    const session = await authProvider.requireRole([...WRITE_ROLES]);
-    return session ? null : { success: false, error: "Not authenticated." };
-  } catch (err) {
-    if (err instanceof AuthError) return { success: false, error: err.message };
-    return { success: false, error: "Something went wrong." };
-  }
-}
-
 /**
  * Creates a work order from the wizard's final "Review" step payload. The
  * caller (review-step.tsx) submits the fully-assembled wizard state as
@@ -35,8 +28,10 @@ async function requireWriteAccess(): Promise<ActionResult | null> {
  * (fabrics, furniturePieces) that don't round-trip cleanly through
  * FormData.entries().
  */
-export async function createWorkOrderAction(input: unknown): Promise<ActionResult> {
-  const denied = await requireWriteAccess();
+export async function createWorkOrderAction(
+  input: unknown,
+): Promise<ActionResult> {
+  const denied = await requireWriteAccess(WRITE_ROLES);
   if (denied) return denied;
 
   const parsed = createWorkOrderSchema.safeParse(input);
@@ -45,7 +40,8 @@ export async function createWorkOrderAction(input: unknown): Promise<ActionResul
   }
 
   const session = await authProvider.getSession();
-  const { type, projectId, specifications, fabrics, assignedToId, dueDate } = parsed.data;
+  const { type, projectId, specifications, fabrics, assignedToId, dueDate } =
+    parsed.data;
   const orderNumber = await nextOrderNumber();
 
   const workOrderId = await db.transaction(async (tx) => {
@@ -87,7 +83,7 @@ export async function updateWorkOrderStatusAction(
   _prevState: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const denied = await requireWriteAccess();
+  const denied = await requireWriteAccess(WRITE_ROLES);
   if (denied) return denied;
 
   const raw = Object.fromEntries(formData.entries());
@@ -106,17 +102,23 @@ export async function updateWorkOrderStatusAction(
   return { success: true };
 }
 
-export async function storeWorkOrderPdfKeyAction(id: string, pdfStorageKey: string): Promise<ActionResult> {
-  const denied = await requireWriteAccess();
+export async function storeWorkOrderPdfKeyAction(
+  id: string,
+  pdfStorageKey: string,
+): Promise<ActionResult> {
+  const denied = await requireWriteAccess(WRITE_ROLES);
   if (denied) return denied;
 
-  await db.update(workOrders).set({ pdfStorageKey, updatedAt: new Date() }).where(eq(workOrders.id, id));
+  await db
+    .update(workOrders)
+    .set({ pdfStorageKey, updatedAt: new Date() })
+    .where(eq(workOrders.id, id));
   revalidatePath(`/work-orders/${id}`);
   return { success: true };
 }
 
 export async function deleteWorkOrderAction(id: string): Promise<ActionResult> {
-  const denied = await requireWriteAccess();
+  const denied = await requireWriteAccess(WRITE_ROLES);
   if (denied) return denied;
 
   await db.delete(workOrders).where(eq(workOrders.id, id));
