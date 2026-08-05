@@ -1492,24 +1492,67 @@ async function main() {
     ],
   });
 
+  // Illustrated measurement sheets (deck p4). Values are inches, matching
+  // the deck's own sample numbers, so the sofa sheet reads like a real one
+  // straight after seeding rather than a grid of blanks.
+  const sofaSheet = (
+    w: number,
+    d: number,
+    h: number,
+    seatW: number,
+    seatD: number,
+    seatH: number,
+  ) => ({
+    kind: "sofa" as const,
+    unit: "in" as const,
+    entries: [
+      { key: "overallWidth", value: w },
+      { key: "overallDepth", value: d },
+      { key: "overallHeight", value: h },
+      { key: "seatWidth", value: seatW },
+      { key: "seatDepth", value: seatD },
+      { key: "seatHeight", value: seatH },
+      { key: "armWidth", value: 12 },
+      { key: "legHeight", value: 4 },
+      { key: "clearanceNeeded", value: 36 },
+    ],
+  });
+
+  const windowSheet = (w: number, h: number) => ({
+    kind: "window" as const,
+    unit: "in" as const,
+    entries: [
+      { key: "windowWidth", value: w },
+      { key: "windowHeight", value: h },
+      { key: "rodWidth", value: w + 12 },
+      { key: "rodHeight", value: h + 12 },
+      { key: "curtainLength", value: h + 14 },
+      { key: "stackBack", value: 8 },
+      { key: "reveal", value: 6 },
+    ],
+  });
+
   await db.insert(clientMeasurements).values([
     {
       projectId: whitmore!.id,
       furniturePiece: "3-seat sofa",
       notes: "Original frame square; no racking. Arms 26in from floor.",
       canvasData: measurementCanvas("Sofa", 84, 34, 38),
+      sheets: [sofaSheet(96, 40, 34, 72, 24, 18)],
     },
     {
       projectId: whitmore!.id,
       furniturePiece: "Wingback chair",
       notes: "Pair. Right chair has a loose front rail — flag to frame shop.",
       canvasData: measurementCanvas("Wingback", 32, 45, 34),
+      sheets: [sofaSheet(32, 34, 45, 21, 22, 19)],
     },
     {
       projectId: chen!.id,
       furniturePiece: "Sectional — chaise module",
       notes: "Chaise is left-facing as viewed from seated position.",
       canvasData: measurementCanvas("Chaise", 68, 33, 62),
+      sheets: [sofaSheet(68, 62, 33, 60, 38, 17)],
     },
     {
       projectId: novak!.id,
@@ -1517,12 +1560,14 @@ async function main() {
       notes:
         "Measured before strip-down. Serpentine back — see photo reference.",
       canvasData: measurementCanvas("Settee", 58, 38, 27),
+      sheets: [sofaSheet(58, 27, 38, 46, 20, 16)],
     },
     {
       projectId: kingsley!.id,
       furniturePiece: "King headboard",
       notes: "Wall-mount height confirmed at 54in to top edge.",
       canvasData: measurementCanvas("Headboard", 80, 58, 4),
+      sheets: [],
     },
     {
       projectId: ashford!.id,
@@ -1530,6 +1575,7 @@ async function main() {
       notes:
         "Nine windows; this is the tallest. Measure twice — plaster is uneven.",
       canvasData: measurementCanvas("Window", 48, 108, 6),
+      sheets: [windowSheet(78, 84)],
     },
   ]);
 

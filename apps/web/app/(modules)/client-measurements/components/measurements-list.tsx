@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, Button } from "@kostas/ui";
 import { deleteMeasurementAction } from "../api/actions";
 import { PhotoDropzone } from "./photo-dropzone";
@@ -42,9 +43,21 @@ export function MeasurementsList({
               <p className="text-sm">{measurement.notes}</p>
             ) : null}
             <p className="text-xs text-muted-foreground">
-              {measurement.canvasData.points.length} points,{" "}
-              {measurement.canvasData.lines.length} dimension lines
+              {(measurement.sheets ?? []).reduce(
+                (total, sheet) =>
+                  total + sheet.entries.filter((e) => e.value != null).length,
+                0,
+              )}{" "}
+              dimensions recorded · {measurement.canvasData.lines.length}{" "}
+              freehand lines
             </p>
+            <Link
+              href={`/client-measurements/${measurement.id}`}
+              className="text-sm font-medium text-primary hover:underline"
+              data-testid="open-measurement"
+            >
+              Open measurement sheet →
+            </Link>
             <PhotoDropzone measurementId={measurement.id} />
             <Button
               variant="ghost"

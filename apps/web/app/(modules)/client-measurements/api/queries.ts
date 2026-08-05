@@ -10,6 +10,13 @@ export async function listMeasurements(projectId?: string) {
   });
 }
 
+export async function getMeasurementById(id: string) {
+  return db.query.clientMeasurements.findFirst({
+    where: eq(clientMeasurements.id, id),
+    with: { project: true },
+  });
+}
+
 export async function listProjectsForSelect() {
   return db.query.projects.findMany({
     columns: { id: true, name: true, clientName: true },
