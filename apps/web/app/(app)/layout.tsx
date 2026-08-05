@@ -1,12 +1,13 @@
 import { Suspense } from "react";
 import { SidebarNav, SidebarNavFallback } from "@/components/sidebar-nav";
+import { SidebarPanels } from "@/components/sidebar-panels";
 import { AppHeader } from "@/components/app-header";
 import { KostasLogo, KostasMonogram } from "@/components/kostas-logo";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-card p-4 md:flex">
+      <aside className="hidden w-60 shrink-0 flex-col overflow-y-auto border-r border-border bg-card p-4 md:flex">
         <div className="mb-5 px-2">
           <KostasLogo />
         </div>
@@ -15,6 +16,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             Suspense under Cache Components. */}
         <Suspense fallback={<SidebarNavFallback />}>
           <SidebarNav />
+        </Suspense>
+        {/* Mailbox status + Quick Create, as the deck pins them below the
+            nav. Its own boundary so the session/mailbox reads it does can't
+            delay the nav links above it. */}
+        <Suspense fallback={null}>
+          <SidebarPanels />
         </Suspense>
       </aside>
       <div className="flex flex-1 flex-col">
