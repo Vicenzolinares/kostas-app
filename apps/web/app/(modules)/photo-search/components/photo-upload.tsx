@@ -3,15 +3,17 @@
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import Image from "next/image";
+import { ImagePlus, UploadCloud } from "lucide-react";
 import { Button, Card, CardContent } from "@kostas/ui";
-import type { PhotoMatchCandidate } from "../types";
+import type { EnrichedPhotoMatch } from "../types";
 import { MatchReview } from "./match-review";
 
 interface UploadResponse {
   id: string;
   status: string;
   description?: string;
-  matches?: PhotoMatchCandidate[];
+  demoMode?: boolean;
+  matches?: EnrichedPhotoMatch[];
   error?: string;
 }
 
@@ -67,20 +69,47 @@ export function PhotoUpload() {
         <CardContent className="pt-6">
           <div
             {...getRootProps()}
-            className={`flex cursor-pointer flex-col items-center gap-3 rounded-md border-2 border-dashed p-10 text-center transition-colors ${
-              isDragActive ? "border-primary bg-primary/5" : "border-border"
+            data-testid="photo-dropzone"
+            className={`flex cursor-pointer flex-col items-center gap-3 rounded-lg border-2 border-dashed text-center transition-colors ${
+              preview ? "p-6" : "p-10"
+            } ${
+              isDragActive
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/40 hover:bg-accent/30"
             }`}
           >
             <input {...getInputProps()} />
             {preview ? (
-              <Image src={preview} alt="Upload preview" width={200} height={200} className="rounded-md object-cover" unoptimized />
+              <Image
+                src={preview}
+                alt="Upload preview"
+                width={200}
+                height={200}
+                className="rounded-md border border-border object-cover"
+                unoptimized
+              />
             ) : (
-              <p className="text-sm text-muted-foreground">
-                Drag & drop a photo here, or click to select one.
-              </p>
+              <>
+                <span className="flex size-12 items-center justify-center rounded-full bg-accent text-primary">
+                  <UploadCloud className="size-6" aria-hidden />
+                </span>
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-medium">
+                    Drag &amp; drop a photo here
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    JPG, PNG or HEIC — one photo at a time.
+                  </p>
+                </div>
+              </>
             )}
-            <Button type="button" variant="outline" size="sm">
-              {pending ? "Analyzing…" : "Choose photo"}
+            <Button type="button" variant="outline" size="sm" disabled={pending}>
+              <ImagePlus className="mr-2 size-4" aria-hidden />
+              {pending
+                ? "Analyzing…"
+                : preview
+                  ? "Replace photo"
+                  : "Choose photo"}
             </Button>
           </div>
         </CardContent>
@@ -89,7 +118,13 @@ export function PhotoUpload() {
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       {result?.matches ? (
-        <MatchReview searchId={result.id} description={result.description} matches={result.matches} />
+        <MatchReview
+          searchId={result.id}
+          description={result.description}
+          demoMode={result.demoMode}
+          status={result.status}
+          matches={result.matches}
+        />
       ) : null}
     </div>
   );
