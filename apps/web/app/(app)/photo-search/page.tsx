@@ -1,5 +1,7 @@
-import { Badge } from "@kostas/ui";
+import { Suspense } from "react";
+import { Badge, Card, CardContent } from "@kostas/ui";
 import { PhotoUpload } from "@/app/(modules)/photo-search/components/photo-upload";
+import { RecentSearches } from "@/app/(modules)/photo-search/components/recent-searches";
 import { aiVisionDemoMode } from "@/lib/demo-mode";
 
 export default function PhotoSearchPage() {
@@ -30,7 +32,23 @@ export default function PhotoSearchPage() {
           </div>
         ) : null}
       </div>
-      <PhotoUpload />
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]">
+        <PhotoUpload />
+        {/* DB read stays under its own boundary — Cache Components will not
+            let the page shell await it. */}
+        <Suspense
+          fallback={
+            <Card>
+              <CardContent className="pt-6 text-sm text-muted-foreground">
+                Loading recent searches…
+              </CardContent>
+            </Card>
+          }
+        >
+          <RecentSearches />
+        </Suspense>
+      </div>
     </div>
   );
 }
