@@ -1,9 +1,16 @@
 import "server-only";
 import { and, eq, gte, lte, or, isNull } from "drizzle-orm";
 import { RRule } from "rrule";
-import { db, calendarEvents } from "@kostas/database";
+import { db, calendarEvents, users, workOrders, projects } from "@kostas/database";
 import type { CalendarRange } from "@kostas/shared/schemas";
 import type { FullCalendarEventInput } from "../types";
+
+/** Row shape of the joined select below, reused by the mapper. */
+type CalendarEventRow = typeof calendarEvents.$inferSelect & {
+  assignedToName: string | null;
+  workOrderNumber: string | null;
+  projectName: string | null;
+};
 
 /**
  * Expands recurring events (rrule string) into individual instances that
@@ -13,9 +20,33 @@ import type { FullCalendarEventInput } from "../types";
  * expect a flat list of concrete event instances.
  */
 export async function listCalendarEvents(range: CalendarRange): Promise<FullCalendarEventInput[]> {
-  const rows = await db
-    .select()
+  // Left-joined rather than fetched per event: the details panel names the
+  // assignee, work order and project for whichever event is selected, and a
+  // month's worth of events would otherwise be N+1 round trips.
+  const rows: CalendarEventRow[] = await db
+    .select({
+      id: calendarEvents.id,
+      title: calendarEvents.title,
+      type: calendarEvents.type,
+      start: calendarEvents.start,
+      end: calendarEvents.end,
+      allDay: calendarEvents.allDay,
+      rrule: calendarEvents.rrule,
+      location: calendarEvents.location,
+      notes: calendarEvents.notes,
+      projectId: calendarEvents.projectId,
+      workOrderId: calendarEvents.workOrderId,
+      assignedToId: calendarEvents.assignedToId,
+      createdAt: calendarEvents.createdAt,
+      updatedAt: calendarEvents.updatedAt,
+      assignedToName: users.name,
+      workOrderNumber: workOrders.orderNumber,
+      projectName: projects.name,
+    })
     .from(calendarEvents)
+    .leftJoin(users, eq(users.id, calendarEvents.assignedToId))
+    .leftJoin(workOrders, eq(workOrders.id, calendarEvents.workOrderId))
+    .leftJoin(projects, eq(projects.id, calendarEvents.projectId))
     .where(
       or(
         // Non-recurring events overlapping the range.
@@ -66,7 +97,7 @@ function toRRuleDate(date: Date): string {
 
 function toEventInput(
   id: string,
-  row: typeof calendarEvents.$inferSelect,
+  row: CalendarEventRow,
   start: Date,
   end: Date,
   isRecurrenceInstance = false,
@@ -84,6 +115,9 @@ function toEventInput(
       projectId: row.projectId,
       workOrderId: row.workOrderId,
       assignedToId: row.assignedToId,
+      assignedToName: row.assignedToName,
+      workOrderNumber: row.workOrderNumber,
+      projectName: row.projectName,
       isRecurrenceInstance,
     },
   };

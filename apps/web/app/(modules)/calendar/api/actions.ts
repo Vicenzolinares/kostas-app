@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db, calendarEvents } from "@kostas/database";
 import { createCalendarEventSchema, updateCalendarEventSchema, moveCalendarEventSchema } from "@kostas/shared/schemas";
-import { AuthError } from "@kostas/auth";
-import { authProvider } from "@/lib/auth";
+import { requireWriteAccess } from "@/lib/action-auth";
+import { CALENDAR_WRITE_ROLES } from "../lib/roles";
 
 export interface ActionResult {
   success: boolean;
@@ -13,14 +13,14 @@ export interface ActionResult {
   fieldErrors?: Record<string, string[]>;
 }
 
+/**
+ * These four actions previously gated on `requireRole([])` — "any signed-in
+ * user" — which let external designers and kiosk accounts create, move and
+ * delete shop calendar events by POSTing the action directly. Routed
+ * through the shared helper against the office roles instead.
+ */
 async function requireAuth(): Promise<ActionResult | null> {
-  try {
-    await authProvider.requireRole([]);
-    return null;
-  } catch (err) {
-    if (err instanceof AuthError) return { success: false, error: err.message };
-    return { success: false, error: "Something went wrong." };
-  }
+  return requireWriteAccess(CALENDAR_WRITE_ROLES);
 }
 
 export async function createCalendarEventAction(input: unknown): Promise<ActionResult> {
