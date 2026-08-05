@@ -16,13 +16,29 @@ import type {
 export async function listDesignSubmissions(): Promise<
   DesignSubmissionListItem[]
 > {
+  // The office list is organised by client *and* designer — knowing which
+  // firm a submission is sitting with is the whole point of the screen, so
+  // the assigned designer is joined in rather than fetched per row.
+  const designer = alias(users, "assigned_designer");
+
   const rows = await db
-    .select({ submission: designSubmissions, projectName: projects.name })
+    .select({
+      submission: designSubmissions,
+      projectName: projects.name,
+      clientName: projects.clientName,
+      designerName: designer.name,
+    })
     .from(designSubmissions)
     .innerJoin(projects, eq(designSubmissions.projectId, projects.id))
+    .leftJoin(designer, eq(designSubmissions.designerId, designer.id))
     .orderBy(desc(designSubmissions.updatedAt));
 
-  return rows.map((r) => ({ ...r.submission, projectName: r.projectName }));
+  return rows.map((r) => ({
+    ...r.submission,
+    projectName: r.projectName,
+    clientName: r.clientName,
+    designerName: r.designerName,
+  }));
 }
 
 export async function getDesignSubmission(

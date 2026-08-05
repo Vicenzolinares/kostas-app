@@ -30,8 +30,9 @@ export function SubmissionsTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Title</TableHead>
             <TableHead>Project</TableHead>
+            <TableHead>Client / Designer</TableHead>
+            <TableHead>Submission</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Updated</TableHead>
           </TableRow>
@@ -44,10 +45,18 @@ export function SubmissionsTable({
                   href={`/designer-portal/${submission.id}`}
                   className="font-medium hover:underline"
                 >
-                  {submission.title}
+                  {submission.projectName}
                 </Link>
               </TableCell>
-              <TableCell>{submission.projectName}</TableCell>
+              <TableCell>
+                <span className="block">{submission.clientName ?? "—"}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {submission.designerName ?? "Unassigned"}
+                </span>
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {submission.title}
+              </TableCell>
               <TableCell>
                 <SubmissionStatusBadge status={submission.status} />
               </TableCell>

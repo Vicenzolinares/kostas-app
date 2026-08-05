@@ -85,6 +85,14 @@ export function WorkflowActions({
             type="button"
             size="sm"
             variant={eventType === "REQUEST_CHANGES" ? "outline" : "default"}
+            // Approval is the one irreversible-feeling step on this screen
+            // and the mockups colour it green, so it reads as the positive
+            // action rather than just "the default button".
+            className={
+              eventType === "APPROVE"
+                ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                : undefined
+            }
             disabled={
               pending ||
               (eventType === "REQUEST_CHANGES" && showNoteInput && !note.trim())

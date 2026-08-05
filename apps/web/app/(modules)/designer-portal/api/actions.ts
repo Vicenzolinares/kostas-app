@@ -53,7 +53,11 @@ export async function createDesignSubmissionAction(
 export async function transitionDesignSubmissionAction(
   input: unknown,
 ): Promise<ActionResult> {
-  await authProvider.requireRole(["admin", "manager", "designer"]);
+  const session = await authProvider.requireRole([
+    "admin",
+    "manager",
+    "designer",
+  ]);
 
   const parsed = transitionDesignSubmissionSchema.safeParse(input);
   if (!parsed.success) {
@@ -64,6 +68,16 @@ export async function transitionDesignSubmissionAction(
     where: eq(designSubmissions.id, parsed.data.id),
   });
   if (!submission) {
+    return { success: false, error: "Submission not found." };
+  }
+
+  // External design firms share the `designer` role, so the role check
+  // alone would let one firm approve another's work. Office staff keep
+  // full reach; a designer is confined to submissions assigned to them.
+  if (
+    session.user.role === "designer" &&
+    submission.designerId !== session.user.id
+  ) {
     return { success: false, error: "Submission not found." };
   }
 
@@ -84,8 +98,13 @@ export async function transitionDesignSubmissionAction(
     .set({ status: target, updatedAt: new Date() })
     .where(eq(designSubmissions.id, parsed.data.id));
 
+  // Both surfaces read the same rows: the office list and the external
+  // portal must reflect a transition immediately.
   revalidatePath("/designer-portal");
   revalidatePath(`/designer-portal/${parsed.data.id}`);
+  revalidatePath("/portal");
+  revalidatePath("/portal/approvals");
+  revalidatePath(`/portal/${parsed.data.id}`);
   return { success: true };
 }
 
@@ -111,5 +130,6 @@ export async function createDesignCommentAction(
   });
 
   revalidatePath(`/designer-portal/${parsed.data.submissionId}`);
+  revalidatePath(`/portal/${parsed.data.submissionId}`);
   return { success: true };
 }
