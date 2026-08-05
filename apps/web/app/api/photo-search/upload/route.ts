@@ -8,7 +8,10 @@ import { storageProvider } from "@/lib/storage";
 import { aiVisionProvider } from "@/lib/ai-vision";
 import { aiVisionDemoMode } from "@/lib/demo-mode";
 import { findDemoMatches, DEMO_MATCH_THRESHOLD } from "@/lib/demo-photo-match";
-import { findSimilarPhotos } from "@/app/(modules)/photo-search/api/queries";
+import {
+  enrichMatches,
+  findSimilarPhotos,
+} from "@/app/(modules)/photo-search/api/queries";
 
 const MAX_DIMENSION = 1024;
 
@@ -93,7 +96,7 @@ export async function POST(request: NextRequest) {
       id: search.id,
       status,
       description,
-      matches,
+      matches: await enrichMatches(matches),
       demoMode: true,
     });
   }
@@ -123,7 +126,7 @@ export async function POST(request: NextRequest) {
       id: search.id,
       status,
       description,
-      matches,
+      matches: await enrichMatches(matches),
     });
   } catch (err) {
     if (err instanceof AIVisionConfigurationError) {
