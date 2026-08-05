@@ -119,59 +119,73 @@ async function main() {
   // slow enough that hashing per-user is a noticeable delay for no benefit.
   const passwordHash = await bcrypt.hash("password123", 10);
 
-  const [victoria, kostas, maria, tom, elena, priya, andre, sofia] = await db
-    .insert(users)
-    .values([
-      {
-        name: "Victoria Alvarez",
-        email: "admin@kostas.local",
-        passwordHash,
-        role: "admin",
-      },
-      {
-        name: "Kostas Georgiou",
-        email: "kostas@kostas.local",
-        passwordHash,
-        role: "manager",
-      },
-      {
-        name: "Maria Gallardo",
-        email: "maria@kostas.local",
-        passwordHash,
-        role: "shop_floor",
-      },
-      {
-        name: "Tom Rivera",
-        email: "tom@kostas.local",
-        passwordHash,
-        role: "shop_floor",
-      },
-      {
-        name: "Elena Duarte",
-        email: "elena@kostas.local",
-        passwordHash,
-        role: "designer",
-      },
-      {
-        name: "Priya Raman",
-        email: "priya@kostas.local",
-        passwordHash,
-        role: "sales",
-      },
-      {
-        name: "Andre Boateng",
-        email: "andre@kostas.local",
-        passwordHash,
-        role: "shop_floor",
-      },
-      {
-        name: "Sofia Marchetti",
-        email: "sofia@studio-marchetti.com",
-        passwordHash,
-        role: "designer",
-      },
-    ])
-    .returning();
+  const [victoria, kostas, maria, tom, elena, priya, andre, sofia, amber] =
+    await db
+      .insert(users)
+      .values([
+        {
+          name: "Victoria Alvarez",
+          email: "admin@kostas.local",
+          passwordHash,
+          role: "admin",
+        },
+        {
+          name: "Kostas Georgiou",
+          email: "kostas@kostas.local",
+          passwordHash,
+          role: "manager",
+        },
+        {
+          name: "Maria Gallardo",
+          email: "maria@kostas.local",
+          passwordHash,
+          role: "shop_floor",
+        },
+        {
+          name: "Tom Rivera",
+          email: "tom@kostas.local",
+          passwordHash,
+          role: "shop_floor",
+        },
+        // Internal design lead — office staff, not a portal user. The
+        // `designer` role is reserved for external design firms (see below),
+        // since that role is what grants access to the Designer Portal and
+        // nothing else.
+        {
+          name: "Elena Duarte",
+          email: "elena@kostas.local",
+          passwordHash,
+          role: "manager",
+        },
+        {
+          name: "Priya Raman",
+          email: "priya@kostas.local",
+          passwordHash,
+          role: "sales",
+        },
+        {
+          name: "Andre Boateng",
+          email: "andre@kostas.local",
+          passwordHash,
+          role: "shop_floor",
+        },
+        // External design firms. These accounts only ever see the Designer
+        // Portal — never the office app — which is what the mockup's
+        // "separate from the employee view" requirement means in practice.
+        {
+          name: "Sofia Marchetti",
+          email: "sofia@studio-marchetti.com",
+          passwordHash,
+          role: "designer",
+        },
+        {
+          name: "Amber Lewis",
+          email: "amber@amberinteriors.example.com",
+          passwordHash,
+          role: "designer",
+        },
+      ])
+      .returning();
 
   if (
     !victoria ||
@@ -181,11 +195,14 @@ async function main() {
     !elena ||
     !priya ||
     !andre ||
-    !sofia
+    !sofia ||
+    !amber
   ) {
     throw new Error("Failed to seed users.");
   }
-  console.log(`  users: 8 (login: ${victoria.email} / password123)`);
+  console.log(
+    `  users: 9 (office login: ${victoria.email} · designer login: ${sofia.email} — password123)`,
+  );
 
   // --- projects ----------------------------------------------------------
   const [
@@ -2408,10 +2425,14 @@ async function main() {
   const insertedSubmissions = await db
     .insert(designSubmissions)
     .values([
+      // Submissions are raised by the office (submittedById) and assigned to
+      // an external design firm for approval (designerId) — that assignment
+      // is what the Designer Portal filters on, so each firm only ever sees
+      // its own work.
       {
         projectId: ashford!.id,
-        submittedById: sofia!.id,
-        designerId: elena!.id,
+        submittedById: elena!.id,
+        designerId: sofia!.id,
         title: "Ashford Loft — drapery elevations Rev B",
         status: "designer_review",
         fileKeys: ["demo/photos/fabric-linen-stripe.png"],
@@ -2419,15 +2440,15 @@ async function main() {
       {
         projectId: chen!.id,
         submittedById: elena!.id,
-        designerId: elena!.id,
+        designerId: sofia!.id,
         title: "Chen sectional — bouclé and welt detail",
-        status: "approved",
+        status: "designer_review",
         fileKeys: ["demo/photos/fabric-performance-boucle.png"],
       },
       {
         projectId: harborview!.id,
-        submittedById: sofia!.id,
-        designerId: elena!.id,
+        submittedById: victoria!.id,
+        designerId: amber!.id,
         title: "Harborview lobby — contract fabric spec",
         status: "changes_requested",
         fileKeys: ["demo/photos/fabric-herringbone-wool.png"],
@@ -2435,7 +2456,7 @@ async function main() {
       {
         projectId: novak!.id,
         submittedById: elena!.id,
-        designerId: elena!.id,
+        designerId: amber!.id,
         title: "Novak settee — period fabric proposal",
         status: "production",
         fileKeys: ["demo/photos/fabric-chenille-weave.png"],
@@ -2443,14 +2464,31 @@ async function main() {
       {
         projectId: whitmore!.id,
         submittedById: elena!.id,
-        designerId: elena!.id,
+        designerId: sofia!.id,
         title: "Whitmore suite — final scheme",
         status: "completed",
         fileKeys: ["demo/photos/fabric-velvet-mohair.png"],
       },
       {
+        projectId: kingsley!.id,
+        submittedById: priya!.id,
+        designerId: sofia!.id,
+        title: "Kingsley headboard — channel tufting layout",
+        status: "approved",
+        fileKeys: ["demo/photos/fabric-velvet-mohair.png"],
+      },
+      {
+        projectId: delgado!.id,
+        submittedById: priya!.id,
+        designerId: amber!.id,
+        title: "Delgado dining chairs — silk damask placement",
+        status: "designer_review",
+        fileKeys: ["demo/photos/fabric-silk-damask.png"],
+      },
+      // Unassigned draft: sits in the office view only, never in a portal.
+      {
         projectId: torres!.id,
-        submittedById: sofia!.id,
+        submittedById: priya!.id,
         designerId: null,
         title: "Torres outdoor — initial concept",
         status: "draft",

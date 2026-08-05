@@ -22,8 +22,16 @@ export async function signInAction(
     return { error: "Enter a valid email and password." };
   }
 
+  let destination = "/dashboard";
+
   try {
-    await authProvider.signIn(parsed.data);
+    const session = await authProvider.signIn(parsed.data);
+    // External design firms have no office access at all (see proxy.ts), so
+    // send them straight to their portal rather than bouncing them off
+    // /dashboard through a redirect they'd briefly see.
+    if (session.user.role === "designer") {
+      destination = "/portal";
+    }
   } catch (err) {
     // AuthError is the expected, user-facing case (bad credentials): its
     // message is written for the person signing in, so show it as-is.
@@ -43,5 +51,5 @@ export async function signInAction(
     };
   }
 
-  redirect("/dashboard");
+  redirect(destination);
 }
